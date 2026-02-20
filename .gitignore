@@ -1,0 +1,28 @@
+# Binaries
+dida365
+dida365-cli
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Output
+*.out
+
+# Go workspace
+.DS_Store
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test coverage
+coverage.txt
+coverage.html
