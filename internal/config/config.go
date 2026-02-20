@@ -9,10 +9,10 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	ClientID     string `json:"clientID"`
-	ClientSecret string `json:"clientSecret"`
-	AccessToken  string `json:"accessToken"`
-	BaseURL      string `json:"baseURL"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	AccessToken  string `json:"access_token"`
+	BaseURL      string `json:"base_url"`
 }
 
 // Load reads a configuration from the specified file path
