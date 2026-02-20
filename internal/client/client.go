@@ -6,8 +6,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/bearzk/dida365-cli/internal/config"
+)
+
+// Error variables for typed error handling
+var (
+	ErrUnauthorized = fmt.Errorf("unauthorized: access token expired or invalid")
+	ErrForbidden    = fmt.Errorf("forbidden: insufficient permissions")
+	ErrNotFound     = fmt.Errorf("not found: resource does not exist")
 )
 
 // Client represents an HTTP client for communicating with the Dida365 API
@@ -20,9 +28,11 @@ type Client struct {
 // NewClient creates a new Dida365 API client
 func NewClient(cfg *config.Config) *Client {
 	return &Client{
-		httpClient: &http.Client{},
-		config:     cfg,
-		baseURL:    cfg.BaseURL,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+		config:  cfg,
+		baseURL: cfg.BaseURL,
 	}
 }
 
@@ -45,7 +55,9 @@ func (c *Client) doRequest(method, path string, body, result interface{}) error 
 
 	// Set headers
 	req.Header.Set("Authorization", "Bearer "+c.config.AccessToken)
-	req.Header.Set("Content-Type", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	// Execute request
 	resp, err := c.httpClient.Do(req)
@@ -79,11 +91,11 @@ func (c *Client) doRequest(method, path string, body, result interface{}) error 
 func (c *Client) handleHTTPError(statusCode int, body []byte) error {
 	switch statusCode {
 	case http.StatusUnauthorized:
-		return fmt.Errorf("access token expired or invalid")
+		return fmt.Errorf("%w", ErrUnauthorized)
 	case http.StatusForbidden:
-		return fmt.Errorf("insufficient permissions for this operation")
+		return fmt.Errorf("%w", ErrForbidden)
 	case http.StatusNotFound:
-		return fmt.Errorf("resource not found")
+		return fmt.Errorf("%w", ErrNotFound)
 	case http.StatusBadRequest:
 		// Try to parse error message from response body
 		var apiError struct {

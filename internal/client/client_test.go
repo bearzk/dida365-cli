@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -45,11 +46,10 @@ func TestDoRequestAuthHeader(t *testing.T) {
 			t.Errorf("expected Authorization header %s, got %s", expectedAuth, authHeader)
 		}
 
-		// Verify Content-Type header
+		// Verify Content-Type header is NOT set for GET requests with no body
 		contentType := r.Header.Get("Content-Type")
-		expectedContentType := "application/json"
-		if contentType != expectedContentType {
-			t.Errorf("expected Content-Type header %s, got %s", expectedContentType, contentType)
+		if contentType != "" {
+			t.Errorf("expected no Content-Type header for GET request, got %s", contentType)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -83,24 +83,28 @@ func TestDoRequestHTTPErrors(t *testing.T) {
 		statusCode     int
 		responseBody   string
 		expectedError  string
+		checkErrorType error
 	}{
 		{
-			name:          "401 Unauthorized",
-			statusCode:    http.StatusUnauthorized,
-			responseBody:  `{"error": "invalid token"}`,
-			expectedError: "access token expired or invalid",
+			name:           "401 Unauthorized",
+			statusCode:     http.StatusUnauthorized,
+			responseBody:   `{"error": "invalid token"}`,
+			expectedError:  "unauthorized: access token expired or invalid",
+			checkErrorType: ErrUnauthorized,
 		},
 		{
-			name:          "403 Forbidden",
-			statusCode:    http.StatusForbidden,
-			responseBody:  `{"error": "forbidden"}`,
-			expectedError: "insufficient permissions for this operation",
+			name:           "403 Forbidden",
+			statusCode:     http.StatusForbidden,
+			responseBody:   `{"error": "forbidden"}`,
+			expectedError:  "forbidden: insufficient permissions",
+			checkErrorType: ErrForbidden,
 		},
 		{
-			name:          "404 Not Found",
-			statusCode:    http.StatusNotFound,
-			responseBody:  `{"error": "not found"}`,
-			expectedError: "resource not found",
+			name:           "404 Not Found",
+			statusCode:     http.StatusNotFound,
+			responseBody:   `{"error": "not found"}`,
+			expectedError:  "not found: resource does not exist",
+			checkErrorType: ErrNotFound,
 		},
 		{
 			name:          "500 Internal Server Error",
@@ -147,6 +151,13 @@ func TestDoRequestHTTPErrors(t *testing.T) {
 
 			if err.Error() != tt.expectedError {
 				t.Errorf("expected error %q, got %q", tt.expectedError, err.Error())
+			}
+
+			// Check if error can be unwrapped to the expected type
+			if tt.checkErrorType != nil {
+				if !errors.Is(err, tt.checkErrorType) {
+					t.Errorf("expected error to be %v, but errors.Is returned false", tt.checkErrorType)
+				}
 			}
 		})
 	}
@@ -207,5 +218,43 @@ func TestDoRequestJSONMarshaling(t *testing.T) {
 
 	if result["status"] != "active" {
 		t.Errorf("expected status to be 'active', got %v", result["status"])
+	}
+}
+
+func TestDoRequestContentTypeWithBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify Content-Type header IS set for POST requests with body
+		contentType := r.Header.Get("Content-Type")
+		expectedContentType := "application/json"
+		if contentType != expectedContentType {
+			t.Errorf("expected Content-Type header %s for POST with body, got %s", expectedContentType, contentType)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status": "created"}`))
+	}))
+	defer server.Close()
+
+	cfg := &config.Config{
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		AccessToken:  "test-token",
+		BaseURL:      server.URL,
+	}
+
+	client := NewClient(cfg)
+
+	requestBody := map[string]interface{}{
+		"name": "Test Task",
+	}
+
+	var result map[string]string
+	err := client.doRequest("POST", "/test", requestBody, &result)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result["status"] != "created" {
+		t.Errorf("expected status to be created, got %s", result["status"])
 	}
 }
