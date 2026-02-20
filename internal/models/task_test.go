@@ -130,44 +130,77 @@ func TestTaskCreateJSONMarshaling(t *testing.T) {
 }
 
 func TestTaskUpdateJSONMarshaling(t *testing.T) {
-	title := "Updated title"
-	content := "Updated content"
+	t.Run("update with non-empty values", func(t *testing.T) {
+		title := "Updated title"
+		content := "Updated content"
 
-	tu := TaskUpdate{
-		Title:   &title,
-		Content: &content,
-	}
+		tu := TaskUpdate{
+			Title:   &title,
+			Content: &content,
+		}
 
-	data, err := json.Marshal(tu)
-	if err != nil {
-		t.Fatalf("failed to marshal: %v", err)
-	}
+		data, err := json.Marshal(tu)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
 
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		t.Fatalf("failed to unmarshal: %v", err)
-	}
+		var result map[string]interface{}
+		if err := json.Unmarshal(data, &result); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
 
-	if result["title"] != "Updated title" {
-		t.Errorf("title: got %v, want Updated title", result["title"])
-	}
-	if result["content"] != "Updated content" {
-		t.Errorf("content: got %v, want Updated content", result["content"])
-	}
+		if result["title"] != "Updated title" {
+			t.Errorf("title: got %v, want Updated title", result["title"])
+		}
+		if result["content"] != "Updated content" {
+			t.Errorf("content: got %v, want Updated content", result["content"])
+		}
+	})
 
-	// Test omitempty with nil pointers
-	tu2 := TaskUpdate{}
-	data2, err := json.Marshal(tu2)
-	if err != nil {
-		t.Fatalf("failed to marshal empty update: %v", err)
-	}
+	t.Run("empty update with all nil pointers", func(t *testing.T) {
+		tu := TaskUpdate{}
+		data, err := json.Marshal(tu)
+		if err != nil {
+			t.Fatalf("failed to marshal empty update: %v", err)
+		}
 
-	var result2 map[string]interface{}
-	if err := json.Unmarshal(data2, &result2); err != nil {
-		t.Fatalf("failed to unmarshal empty: %v", err)
-	}
+		var result map[string]interface{}
+		if err := json.Unmarshal(data, &result); err != nil {
+			t.Fatalf("failed to unmarshal empty: %v", err)
+		}
 
-	if len(result2) != 0 {
-		t.Errorf("empty TaskUpdate should marshal to empty object, got %v", result2)
-	}
+		if len(result) != 0 {
+			t.Errorf("empty TaskUpdate should marshal to empty object, got %v", result)
+		}
+	})
+
+	t.Run("set title to empty string", func(t *testing.T) {
+		emptyStr := ""
+		tu := TaskUpdate{
+			Title:   &emptyStr, // Explicitly set to empty string
+			Content: nil,       // Not provided (omitted)
+		}
+
+		data, err := json.Marshal(tu)
+		if err != nil {
+			t.Fatalf("failed to marshal: %v", err)
+		}
+
+		var result map[string]interface{}
+		if err := json.Unmarshal(data, &result); err != nil {
+			t.Fatalf("failed to unmarshal: %v", err)
+		}
+
+		// Title should be present and empty
+		if title, exists := result["title"]; !exists {
+			t.Error("title should be present in JSON")
+		} else if title != "" {
+			t.Errorf("title: got %v, want empty string", title)
+		}
+
+		// Content should not be present
+		if _, exists := result["content"]; exists {
+			t.Error("content should not be present when nil")
+		}
+	})
 }
