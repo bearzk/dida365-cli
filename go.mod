@@ -1,3 +1,3 @@
-module github.com/yourusername/dida365-cli
+module github.com/bearzk/dida365-cli
 
 go 1.25.0
