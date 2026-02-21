@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/bearzk/dida365-cli/internal/client"
 	"github.com/bearzk/dida365-cli/internal/config"
+	"github.com/bearzk/dida365-cli/internal/oauth"
 	"github.com/spf13/cobra"
 )
 
@@ -16,11 +19,11 @@ var authCmd = &cobra.Command{
 	Long:  `Configure and validate Dida365 API credentials.`,
 }
 
-var authConfigureCmd = &cobra.Command{
-	Use:   "configure",
-	Short: "Configure authentication credentials",
-	Long:  `Configure the CLI with your Dida365 API credentials. Tests the connection before saving.`,
-	RunE:  runAuthConfigure,
+var authLoginCmd = &cobra.Command{
+	Use:   "login",
+	Short: "Authenticate via OAuth2 authorization code flow",
+	Long:  `Start the OAuth2 authorization code flow to authenticate with Dida365 or TickTick. Opens a browser for user authorization and saves the tokens.`,
+	RunE:  runAuthLogin,
 }
 
 var authStatusCmd = &cobra.Command{
@@ -31,9 +34,10 @@ var authStatusCmd = &cobra.Command{
 }
 
 var (
-	clientID     string
-	clientSecret string
-	accessToken  string
+	loginClientID     string
+	loginClientSecret string
+	loginService      string
+	loginPort         int
 )
 
 func init() {
@@ -41,39 +45,59 @@ func init() {
 	rootCmd.AddCommand(authCmd)
 
 	// Add subcommands to auth
-	authCmd.AddCommand(authConfigureCmd)
+	authCmd.AddCommand(authLoginCmd)
 	authCmd.AddCommand(authStatusCmd)
 
-	// Add flags to configure command
-	authConfigureCmd.Flags().StringVar(&clientID, "client-id", "", "Dida365 API client ID (required)")
-	authConfigureCmd.Flags().StringVar(&clientSecret, "client-secret", "", "Dida365 API client secret (required)")
-	authConfigureCmd.Flags().StringVar(&accessToken, "access-token", "", "Dida365 API access token (required)")
+	// Add flags to login command
+	authLoginCmd.Flags().StringVar(&loginClientID, "client-id", "", "OAuth client ID (required)")
+	authLoginCmd.Flags().StringVar(&loginClientSecret, "client-secret", "", "OAuth client secret (required)")
+	authLoginCmd.Flags().StringVar(&loginService, "service", "dida365", "Service to authenticate with (dida365 or ticktick)")
+	authLoginCmd.Flags().IntVar(&loginPort, "port", 8080, "Local port for OAuth callback server")
 
-	authConfigureCmd.MarkFlagRequired("client-id")
-	authConfigureCmd.MarkFlagRequired("client-secret")
-	authConfigureCmd.MarkFlagRequired("access-token")
+	authLoginCmd.MarkFlagRequired("client-id")
+	authLoginCmd.MarkFlagRequired("client-secret")
 }
 
-func runAuthConfigure(cmd *cobra.Command, args []string) error {
+func runAuthLogin(cmd *cobra.Command, args []string) error {
+	// Validate service
+	service := strings.ToLower(loginService)
+	if service != "dida365" && service != "ticktick" {
+		outputError(fmt.Errorf("invalid service: %s (must be dida365 or ticktick)", loginService), "VALIDATION_ERROR", 5)
+		return nil
+	}
+
+	// Determine base URL from service
+	var baseURL string
+	if service == "dida365" {
+		baseURL = "https://dida365.com"
+	} else {
+		baseURL = "https://ticktick.com"
+	}
+
+	// Print progress messages
+	fmt.Fprintf(os.Stderr, "Starting OAuth2 authorization flow...\n")
+	fmt.Fprintf(os.Stderr, "Service: %s\n", service)
+	fmt.Fprintf(os.Stderr, "Redirect URI: http://localhost:%d/callback\n", loginPort)
+	fmt.Fprintf(os.Stderr, "Opening browser for authorization...\n")
+
+	// Start OAuth flow
+	tokenResp, err := oauth.StartFlow(loginClientID, loginClientSecret, loginPort, service)
+	if err != nil {
+		outputError(err, "AUTH_ERROR", 2)
+		return nil
+	}
+
+	// Calculate token expiry
+	tokenExpiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+
 	// Create config
 	cfg := &config.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		AccessToken:  accessToken,
-		BaseURL:      "https://dida365.com",
-	}
-
-	// Validate config
-	if err := cfg.Validate(); err != nil {
-		outputError(err, "VALIDATION_ERROR", 5)
-		return nil
-	}
-
-	// Test connection by calling ListProjects
-	c := client.NewClient(cfg)
-	if _, err := c.ListProjects(); err != nil {
-		outputError(err, "CONNECTION_ERROR", 2)
-		return nil
+		ClientID:     loginClientID,
+		ClientSecret: loginClientSecret,
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		TokenExpiry:  tokenExpiry,
+		BaseURL:      baseURL,
 	}
 
 	// Save config
@@ -84,14 +108,16 @@ func runAuthConfigure(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := cfg.Save(configPath); err != nil {
-		outputError(err, "SAVE_ERROR", 1)
+		outputError(err, "CONFIG_ERROR", 1)
 		return nil
 	}
 
 	// Output success
 	outputJSON(map[string]interface{}{
-		"configured":  true,
-		"config_path": configPath,
+		"authenticated": true,
+		"service":       service,
+		"expires_at":    tokenExpiry.Format(time.RFC3339),
+		"config_path":   configPath,
 	})
 
 	return nil
