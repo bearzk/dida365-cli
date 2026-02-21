@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -394,12 +395,9 @@ func TestConfigIsExpired(t *testing.T) {
 			ClientID:     "test-client-id",
 			ClientSecret: "test-client-secret",
 			AccessToken:  "test-access-token",
-			TokenExpiry:  time.Now().Add(-1 * time.Millisecond),
+			TokenExpiry:  time.Now().Add(-1 * time.Second),
 			BaseURL:      "https://api.dida365.com",
 		}
-
-		// Sleep briefly to ensure time has passed
-		time.Sleep(10 * time.Millisecond)
 
 		if !config.IsExpired() {
 			t.Error("IsExpired() = false, want true for token expired at current time")
@@ -438,15 +436,5 @@ func TestConfigCanRefresh(t *testing.T) {
 
 // Helper function to check if a string contains a substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && len(substr) > 0 && containsHelper(s, substr)))
-}
-
-func containsHelper(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(s, substr)
 }
