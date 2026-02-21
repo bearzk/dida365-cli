@@ -31,26 +31,56 @@ go install github.com/bearzk/dida365-cli@latest
 
 ### 1. Obtain API Credentials
 
-1. Visit the [Dida365 Developer Portal](https://developer.dida365.com)
+1. Visit the [Dida365 Developer Portal](https://developer.dida365.com) (or [TickTick Developer Portal](https://developer.ticktick.com))
 2. Register an application to get `client_id` and `client_secret`
-3. Complete the OAuth flow to obtain an `access_token`
+3. Set redirect URL to: `http://localhost:8080/callback`
 
-### 2. Configure CLI
+### 2. Authenticate via OAuth2
+
+The CLI handles the complete OAuth2 flow automatically:
 
 ```bash
-dida365 auth configure \
+# For Dida365 (China)
+dida365 auth login \
   --client-id "your_client_id" \
   --client-secret "your_client_secret" \
-  --access-token "your_access_token"
+  --service dida365
+
+# For TickTick (International)
+dida365 auth login \
+  --client-id "your_client_id" \
+  --client-secret "your_client_secret" \
+  --service ticktick
+
+# Use custom port if 8080 is occupied
+dida365 auth login \
+  --client-id "your_client_id" \
+  --client-secret "your_client_secret" \
+  --service dida365 \
+  --port 9000
 ```
 
-Configuration is saved to `~/.dida365/config.json` with secure permissions.
+The CLI will:
+1. Start a local callback server
+2. Open your browser to the authorization page
+3. Handle the callback and exchange the code for tokens
+4. Save credentials securely to `~/.dida365/config.json`
 
-### 3. Verify Setup
+### 3. Verify Authentication
 
 ```bash
 dida365 auth status
 ```
+
+### 4. Refresh Token When Expired
+
+Access tokens expire after 2 hours. Refresh them using:
+
+```bash
+dida365 auth refresh
+```
+
+The CLI will use your stored refresh token to obtain a new access token automatically.
 
 ## Usage
 
@@ -160,10 +190,11 @@ echo "$TASK_JSON" | jq .
 
 - `0` - Success
 - `1` - Configuration error (missing or invalid config)
-- `2` - Authentication error (invalid token)
+- `2` - Authentication error (invalid token, OAuth2 flow failed)
 - `3` - API error (resource not found, bad request, server error)
 - `4` - Network error (connection timeout, DNS failure)
 - `5` - Validation error (invalid arguments, missing flags)
+- `6` - OAuth2 server error (callback server failed to start)
 
 ## JSON Output Format
 
@@ -201,9 +232,16 @@ Location: `~/.dida365/config.json`
   "client_id": "your_client_id",
   "client_secret": "your_client_secret",
   "access_token": "your_access_token",
+  "refresh_token": "your_refresh_token",
+  "token_expiry": "2026-02-21T14:30:00Z",
   "base_url": "https://dida365.com"
 }
 ```
+
+**Token Management:**
+- Access tokens expire after 2 hours
+- Use `dida365 auth refresh` to get a new access token
+- Refresh tokens are long-lived and automatically saved during login
 
 **Security:** The config file is created with `0600` permissions (user read/write only).
 

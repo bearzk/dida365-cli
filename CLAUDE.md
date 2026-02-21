@@ -20,14 +20,29 @@
 - Correct: `UpdateTask(taskID string, updates *models.TaskUpdate)`
 - Takes only taskID, NOT projectID (fixed in Task 7)
 
-### Authentication Flow (TODO)
-⚠️ **Current limitation**: Requires manual `access_token` input
+### Authentication Flow
+✅ **Completed**: Full OAuth2 flow implemented
 
-**Should implement OAuth2 flow:**
-1. Start local server on `http://localhost:8080/callback`
-2. Open browser to authorization URL
-3. Exchange auth code for access_token
-4. Save token with refresh_token
+**Commands:**
+- `auth login` - Complete OAuth2 flow (login + token exchange)
+- `auth refresh` - Refresh expired access token
+- `auth status` - Check authentication status
+
+**Flow:**
+1. Local callback server starts on configurable port (default: 8080)
+2. Browser opens to authorization URL (dida365.com or ticktick.com)
+3. User authorizes, redirected to `http://localhost:PORT/callback`
+4. CLI exchanges auth code for access_token + refresh_token
+5. Tokens saved to `~/.dida365/config.json` with expiry time
+
+**Token Management:**
+- Access tokens expire after 2 hours
+- Refresh tokens are long-lived
+- Automatic token refresh via `auth refresh` command
+
+**Services Supported:**
+- `dida365` - China service (dida365.com)
+- `ticktick` - International service (ticktick.com)
 
 Reference: https://cyfine.github.io/TickTick-Dida365-API-Client/guides/authentication/
 
