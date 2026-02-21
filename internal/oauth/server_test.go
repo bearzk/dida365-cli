@@ -127,11 +127,48 @@ func TestCallbackHandler(t *testing.T) {
 			t.Error("expected result in channel, got nothing")
 		}
 	})
+
+	t.Run("callback with invalid HTTP method", func(t *testing.T) {
+		expectedState := "test-state-123"
+		resultChan := make(chan callbackResult, 1)
+
+		handler := newCallbackHandler(expectedState, resultChan)
+
+		// Test POST method (should be rejected)
+		req := httptest.NewRequest(http.MethodPost, "/?code=some-code&state="+expectedState, nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		// Check HTTP response
+		if w.Code != http.StatusMethodNotAllowed {
+			t.Errorf("expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
+		}
+
+		body := w.Body.String()
+		if !strings.Contains(body, "Method Not Allowed") {
+			t.Error("expected method not allowed message in response body")
+		}
+		if !strings.Contains(body, "GET") {
+			t.Error("expected GET method reference in response body")
+		}
+
+		// Result channel should be empty (no result sent for method errors)
+		select {
+		case <-resultChan:
+			t.Error("expected no result in channel for method error")
+		default:
+			// Expected: no result
+		}
+	})
 }
 
 func TestGenerateState(t *testing.T) {
 	t.Run("generates 64-character hex string", func(t *testing.T) {
-		state := generateState()
+		state, err := generateState()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		if len(state) != 64 {
 			t.Errorf("expected state length 64, got %d", len(state))
@@ -147,8 +184,15 @@ func TestGenerateState(t *testing.T) {
 	})
 
 	t.Run("generates unique states", func(t *testing.T) {
-		state1 := generateState()
-		state2 := generateState()
+		state1, err := generateState()
+		if err != nil {
+			t.Fatalf("unexpected error generating state1: %v", err)
+		}
+
+		state2, err := generateState()
+		if err != nil {
+			t.Fatalf("unexpected error generating state2: %v", err)
+		}
 
 		if state1 == state2 {
 			t.Error("expected unique states, got duplicates")

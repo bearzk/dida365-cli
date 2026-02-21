@@ -46,6 +46,29 @@ func startCallbackServer(port int, state string) (*http.Server, chan callbackRes
 // extracts the authorization code, and sends the result through the channel.
 func newCallbackHandler(expectedState string, resultChan chan<- callbackResult) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Validate HTTP method (OAuth 2.0 spec requires GET)
+		if r.Method != http.MethodGet {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(w, `<!DOCTYPE html>
+<html>
+<head>
+    <title>Method Not Allowed</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .error { color: #d32f2f; }
+        h1 { color: #d32f2f; }
+    </style>
+</head>
+<body>
+    <h1>Method Not Allowed</h1>
+    <p class="error">OAuth callbacks must use GET method.</p>
+    <p>You can close this window and return to the terminal.</p>
+</body>
+</html>`)
+			return
+		}
+
 		// Check for OAuth error response
 		if errCode := r.URL.Query().Get("error"); errCode != "" {
 			errDesc := r.URL.Query().Get("error_description")
@@ -57,8 +80,8 @@ func newCallbackHandler(expectedState string, resultChan chan<- callbackResult) 
 				err: fmt.Errorf("OAuth error: %s (%s)", errCode, errDesc),
 			}
 
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
 <head>
@@ -86,8 +109,8 @@ func newCallbackHandler(expectedState string, resultChan chan<- callbackResult) 
 				err: fmt.Errorf("invalid state parameter: possible CSRF attack"),
 			}
 
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
 <head>
@@ -115,8 +138,8 @@ func newCallbackHandler(expectedState string, resultChan chan<- callbackResult) 
 				err: fmt.Errorf("no authorization code received"),
 			}
 
-			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
 <head>
@@ -139,8 +162,8 @@ func newCallbackHandler(expectedState string, resultChan chan<- callbackResult) 
 		// Success! Send the code
 		resultChan <- callbackResult{code: code}
 
-		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
 <head>
@@ -162,14 +185,12 @@ func newCallbackHandler(expectedState string, resultChan chan<- callbackResult) 
 
 // generateState generates a cryptographically secure random state parameter
 // for CSRF protection. Returns a 64-character hex string (32 random bytes).
-func generateState() string {
+func generateState() (string, error) {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
-		// This should never happen, but fallback to current time hash
-		// in the extremely unlikely event that crypto/rand fails
-		panic(fmt.Sprintf("failed to generate random state: %v", err))
+		return "", fmt.Errorf("failed to generate random state: %w", err)
 	}
-	return hex.EncodeToString(bytes)
+	return hex.EncodeToString(bytes), nil
 }
 
 // shutdownServer performs a graceful shutdown of the HTTP server
