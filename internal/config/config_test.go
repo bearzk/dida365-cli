@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestConfigLoad(t *testing.T) {
@@ -256,6 +257,183 @@ func TestDefaultConfigPath(t *testing.T) {
 			t.Errorf("DefaultConfigPath() = %s, want %s", path, expected)
 		}
 	}
+}
+
+func TestConfigWithTokenFields(t *testing.T) {
+	t.Run("marshal config with refresh token and expiry", func(t *testing.T) {
+		expiry := time.Now().Add(1 * time.Hour)
+		config := Config{
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			AccessToken:  "test-access-token",
+			RefreshToken: "test-refresh-token",
+			TokenExpiry:  expiry,
+			BaseURL:      "https://api.dida365.com",
+		}
+
+		data, err := json.Marshal(config)
+		if err != nil {
+			t.Fatalf("Marshal() error = %v, want nil", err)
+		}
+
+		var unmarshaled map[string]interface{}
+		if err := json.Unmarshal(data, &unmarshaled); err != nil {
+			t.Fatalf("Unmarshal() error = %v, want nil", err)
+		}
+
+		if unmarshaled["refresh_token"] != "test-refresh-token" {
+			t.Errorf("refresh_token = %v, want %v", unmarshaled["refresh_token"], "test-refresh-token")
+		}
+
+		if _, ok := unmarshaled["token_expiry"]; !ok {
+			t.Error("token_expiry field missing in JSON")
+		}
+	})
+
+	t.Run("unmarshal config with refresh token and expiry", func(t *testing.T) {
+		expiry := time.Now().Add(1 * time.Hour).UTC()
+		jsonData := `{
+			"client_id": "test-client-id",
+			"client_secret": "test-client-secret",
+			"access_token": "test-access-token",
+			"refresh_token": "test-refresh-token",
+			"token_expiry": "` + expiry.Format(time.RFC3339) + `",
+			"base_url": "https://api.dida365.com"
+		}`
+
+		var config Config
+		if err := json.Unmarshal([]byte(jsonData), &config); err != nil {
+			t.Fatalf("Unmarshal() error = %v, want nil", err)
+		}
+
+		if config.RefreshToken != "test-refresh-token" {
+			t.Errorf("RefreshToken = %v, want %v", config.RefreshToken, "test-refresh-token")
+		}
+
+		if config.TokenExpiry.IsZero() {
+			t.Error("TokenExpiry is zero, want non-zero value")
+		}
+
+		// Compare with 1 second tolerance for time parsing
+		if diff := config.TokenExpiry.Sub(expiry); diff > time.Second || diff < -time.Second {
+			t.Errorf("TokenExpiry = %v, want %v", config.TokenExpiry, expiry)
+		}
+	})
+
+	t.Run("backward compatibility - old config without new fields", func(t *testing.T) {
+		jsonData := `{
+			"client_id": "test-client-id",
+			"client_secret": "test-client-secret",
+			"access_token": "test-access-token",
+			"base_url": "https://api.dida365.com"
+		}`
+
+		var config Config
+		if err := json.Unmarshal([]byte(jsonData), &config); err != nil {
+			t.Fatalf("Unmarshal() error = %v, want nil", err)
+		}
+
+		if config.RefreshToken != "" {
+			t.Errorf("RefreshToken = %v, want empty string", config.RefreshToken)
+		}
+
+		if !config.TokenExpiry.IsZero() {
+			t.Errorf("TokenExpiry = %v, want zero time", config.TokenExpiry)
+		}
+
+		if config.ClientID != "test-client-id" {
+			t.Errorf("ClientID = %v, want %v", config.ClientID, "test-client-id")
+		}
+	})
+}
+
+func TestConfigIsExpired(t *testing.T) {
+	t.Run("no expiry set returns false", func(t *testing.T) {
+		config := Config{
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			AccessToken:  "test-access-token",
+			BaseURL:      "https://api.dida365.com",
+		}
+
+		if config.IsExpired() {
+			t.Error("IsExpired() = true, want false when no expiry set")
+		}
+	})
+
+	t.Run("expired token returns true", func(t *testing.T) {
+		config := Config{
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			AccessToken:  "test-access-token",
+			TokenExpiry:  time.Now().Add(-1 * time.Hour),
+			BaseURL:      "https://api.dida365.com",
+		}
+
+		if !config.IsExpired() {
+			t.Error("IsExpired() = false, want true for expired token")
+		}
+	})
+
+	t.Run("valid token returns false", func(t *testing.T) {
+		config := Config{
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			AccessToken:  "test-access-token",
+			TokenExpiry:  time.Now().Add(1 * time.Hour),
+			BaseURL:      "https://api.dida365.com",
+		}
+
+		if config.IsExpired() {
+			t.Error("IsExpired() = true, want false for valid token")
+		}
+	})
+
+	t.Run("token expired exactly now returns true", func(t *testing.T) {
+		config := Config{
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			AccessToken:  "test-access-token",
+			TokenExpiry:  time.Now().Add(-1 * time.Millisecond),
+			BaseURL:      "https://api.dida365.com",
+		}
+
+		// Sleep briefly to ensure time has passed
+		time.Sleep(10 * time.Millisecond)
+
+		if !config.IsExpired() {
+			t.Error("IsExpired() = false, want true for token expired at current time")
+		}
+	})
+}
+
+func TestConfigCanRefresh(t *testing.T) {
+	t.Run("has refresh token returns true", func(t *testing.T) {
+		config := Config{
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			AccessToken:  "test-access-token",
+			RefreshToken: "test-refresh-token",
+			BaseURL:      "https://api.dida365.com",
+		}
+
+		if !config.CanRefresh() {
+			t.Error("CanRefresh() = false, want true when refresh token is set")
+		}
+	})
+
+	t.Run("no refresh token returns false", func(t *testing.T) {
+		config := Config{
+			ClientID:     "test-client-id",
+			ClientSecret: "test-client-secret",
+			AccessToken:  "test-access-token",
+			BaseURL:      "https://api.dida365.com",
+		}
+
+		if config.CanRefresh() {
+			t.Error("CanRefresh() = true, want false when refresh token is not set")
+		}
+	})
 }
 
 // Helper function to check if a string contains a substring

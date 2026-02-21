@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // Config represents the application configuration
 type Config struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	AccessToken  string `json:"access_token"`
-	BaseURL      string `json:"base_url"`
+	ClientID     string    `json:"client_id"`
+	ClientSecret string    `json:"client_secret"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
+	TokenExpiry  time.Time `json:"token_expiry,omitempty"`
+	BaseURL      string    `json:"base_url"`
 }
 
 // Load reads a configuration from the specified file path
@@ -79,4 +82,18 @@ func DefaultConfigPath() string {
 		return ""
 	}
 	return filepath.Join(home, ".dida365", "config.json")
+}
+
+// IsExpired returns true if the access token has expired
+// Returns false if no expiry time is set (for backward compatibility)
+func (c *Config) IsExpired() bool {
+	if c.TokenExpiry.IsZero() {
+		return false
+	}
+	return time.Now().After(c.TokenExpiry)
+}
+
+// CanRefresh returns true if the configuration has a refresh token
+func (c *Config) CanRefresh() bool {
+	return c.RefreshToken != ""
 }
