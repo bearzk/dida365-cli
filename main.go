@@ -1,11 +1,7 @@
 package main
 
-import (
-	"fmt"
-	"os"
-)
+import "github.com/bearzk/dida365-cli/cmd"
 
 func main() {
-	fmt.Println("dida365 CLI")
-	os.Exit(0)
+	cmd.Execute()
 }
