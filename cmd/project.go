@@ -31,8 +31,8 @@ var projectGetCmd = &cobra.Command{
 
 var projectDataCmd = &cobra.Command{
 	Use:   "data <project-id>",
-	Short: "Print raw project data response",
-	Long:  `Print the raw JSON response from GET /open/v1/project/{id}/data. Use this to inspect the full response shape including columns and other fields.`,
+	Short: "Print full project data response",
+	Long:  `Print the full JSON response from GET /open/v1/project/{id}/data, including project details, tasks with column assignments, and columns.`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  runProjectData,
 }

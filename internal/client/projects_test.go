@@ -196,16 +196,10 @@ func TestGetProject(t *testing.T) {
 
 func TestGetProjectData(t *testing.T) {
 	t.Run("returns typed project data", func(t *testing.T) {
-		projectData := map[string]interface{}{
-			"project": map[string]interface{}{
-				"id": "proj123", "name": "Test", "sortOrder": 0, "closed": false, "kind": "TASK",
-			},
-			"tasks": []map[string]interface{}{
-				{"id": "t1", "projectId": "proj123", "title": "A task", "status": 0, "sortOrder": 0, "columnId": "col1"},
-			},
-			"columns": []map[string]interface{}{
-				{"id": "col1", "projectId": "proj123", "name": "Backlog", "sortOrder": -100},
-			},
+		projectData := models.ProjectData{
+			Project: models.Project{ID: "proj123", Name: "Test", Kind: "TASK"},
+			Tasks:   []*models.Task{{ID: "t1", ProjectID: "proj123", Title: "A task", ColumnID: "col1"}},
+			Columns: []models.Column{{ID: "col1", ProjectID: "proj123", Name: "Backlog", SortOrder: -100}},
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
