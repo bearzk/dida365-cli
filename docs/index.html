@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dida365 CLI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --accent:   #58a6ff;
+      --green:    #3fb950;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --code-bg:  #1f2937;
+      --radius:   8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Layout ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header .logo { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+    header nav { margin-left: auto; display: flex; gap: 1.5rem; font-size: 0.9rem; color: var(--muted); }
+    header nav a { color: var(--muted); }
+    header nav a:hover { color: var(--text); text-decoration: none; }
+
+    main { max-width: 860px; margin: 0 auto; padding: 3rem 2rem 6rem; }
+
+    /* ── Hero ── */
+    .hero { text-align: center; padding: 3rem 0 4rem; }
+    .hero h1 { font-size: 2.8rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1rem; }
+    .hero h1 span { color: var(--accent); }
+    .hero p { font-size: 1.15rem; color: var(--muted); max-width: 540px; margin: 0 auto 2rem; }
+    .badges { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+    .badge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .badge.green { border-color: var(--green); color: var(--green); }
+    .cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    /* ── Install block ── */
+    .install-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.9rem;
+      color: var(--green);
+      margin: 2.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .install-block .prompt { color: var(--muted); user-select: none; }
+
+    /* ── Feature grid ── */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      padding-top: 1rem;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+    .feature-card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .feature-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .feature-card p { font-size: 0.875rem; color: var(--muted); }
+
+    /* ── Commands ── */
+    .commands { margin-bottom: 3rem; }
+    .cmd-group { margin-bottom: 2rem; }
+    .cmd-group h3 { font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+    .c-comment { color: var(--muted); }
+    .c-cmd     { color: var(--accent); }
+    .c-arg     { color: #ffa657; }
+    .c-flag    { color: var(--green); }
+    .c-str     { color: #a5d6ff; }
+
+    /* ── Exit codes ── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 3rem; font-size: 0.9rem; }
+    th { text-align: left; padding: 0.6rem 1rem; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; }
+    td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); }
+    td:first-child { font-family: monospace; color: var(--green); font-weight: 700; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">✓ dida365-cli</span>
+  <nav>
+    <a href="https://github.com/bearzk/dida365-cli">GitHub</a>
+    <a href="https://github.com/bearzk/dida365-cli/releases">Releases</a>
+    <a href="https://developer.dida365.com">API Docs</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Dida365 <span>CLI</span></h1>
+    <p>A scripting-friendly command-line interface for Dida365&nbsp;/&nbsp;TickTick task management. Full JSON output, OAuth2 authentication, Kanban support.</p>
+    <div class="badges">
+      <span class="badge green">Go 1.21+</span>
+      <span class="badge">MIT License</span>
+      <span class="badge">JSON Output</span>
+      <span class="badge">OAuth2</span>
+      <span class="badge">Kanban</span>
+    </div>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/bearzk/dida365-cli">View on GitHub</a>
+      <a class="btn btn-secondary" href="https://github.com/bearzk/dida365-cli/releases">Download</a>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <div class="install-block">
+    <span class="prompt">$</span>
+    <code>go install github.com/bearzk/dida365-cli@latest</code>
+  </div>
+
+  <!-- Features -->
+  <h2 class="section-title">Features</h2>
+  <div class="features">
+    <div class="feature-card">
+      <div class="icon">✓</div>
+      <h3>Full Task CRUD</h3>
+      <p>Create, read, update, complete, and delete tasks from the command line.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⠿</div>
+      <h3>Kanban Columns</h3>
+      <p>List columns per project and move tasks between them with a single command.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">{}</div>
+      <h3>JSON Output</h3>
+      <p>Every command outputs structured JSON — pipe directly into <code>jq</code> or scripts.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚿</div>
+      <h3>OAuth2 Auth</h3>
+      <p>Browser-based login flow. Tokens stored securely with 0600 permissions.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⟳</div>
+      <h3>Token Refresh</h3>
+      <p>Refresh expired access tokens automatically using the stored refresh token.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚙</div>
+      <h3>Dida365 &amp; TickTick</h3>
+      <p>Works with both the China service (dida365.com) and international (ticktick.com).</p>
+    </div>
+  </div>
+
+  <!-- Commands -->
+  <h2 class="section-title">Commands</h2>
+  <div class="commands">
+
+    <div class="cmd-group">
+      <h3>Authentication</h3>
+      <pre><span class="c-comment"># Login (opens browser)</span>
+<span class="c-cmd">dida365</span> auth login <span class="c-flag">--client-id</span> <span class="c-str">YOUR_ID</span> <span class="c-flag">--client-secret</span> <span class="c-str">YOUR_SECRET</span> <span class="c-flag">--service</span> <span class="c-arg">dida365</span>
+
+<span class="c-comment"># Check token status</span>
+<span class="c-cmd">dida365</span> auth status
+
+<span class="c-comment"># Refresh expired token</span>
+<span class="c-cmd">dida365</span> auth refresh</pre>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Projects</h3>
+      <pre><span class="c-cmd">dida365</span> project list
+<span class="c-cmd">dida365</span> project get <span class="c-arg">&lt;project-id&gt;</span>
+<span class="c-cmd">dida365</span> project columns <span class="c-arg">&lt;project-id&gt;</span>    <span class="c-comment"># list Kanban columns</span>
+<span class="c-cmd">dida365</span> project data <span class="c-arg">&lt;project-id&gt;</span>       <span class="c-comment"># full project response</span></pre>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Tasks</h3>
+      <pre><span class="c-cmd">dida365</span> task list <span class="c-arg">&lt;project-id&gt;</span>
+<span class="c-cmd">dida365</span> task get <span class="c-arg">&lt;task-id&gt;</span> <span class="c-flag">--project-id</span> <span class="c-arg">&lt;project-id&gt;</span>
+<span class="c-cmd">dida365</span> task create <span class="c-flag">--title</span> <span class="c-str">"Deploy v2"</span> <span class="c-flag">--project-id</span> <span class="c-arg">&lt;project-id&gt;</span>
+<span class="c-cmd">dida365</span> task update <span class="c-arg">&lt;task-id&gt;</span> <span class="c-flag">--project-id</span> <span class="c-arg">&lt;project-id&gt;</span> <span class="c-flag">--title</span> <span class="c-str">"New title"</span>
+<span class="c-cmd">dida365</span> task complete <span class="c-arg">&lt;task-id&gt;</span> <span class="c-flag">--project-id</span> <span class="c-arg">&lt;project-id&gt;</span>
+<span class="c-cmd">dida365</span> task delete <span class="c-arg">&lt;task-id&gt;</span> <span class="c-flag">--project-id</span> <span class="c-arg">&lt;project-id&gt;</span>
+<span class="c-cmd">dida365</span> task move <span class="c-arg">&lt;task-id&gt;</span> <span class="c-flag">--project-id</span> <span class="c-arg">&lt;project-id&gt;</span> <span class="c-flag">--column-id</span> <span class="c-arg">&lt;column-id&gt;</span></pre>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Scripting example</h3>
+      <pre><span class="c-comment"># Create a task and capture its ID</span>
+TASK_ID=$(<span class="c-cmd">dida365</span> task create <span class="c-flag">--title</span> <span class="c-str">"Deploy to prod"</span> <span class="c-flag">--project-id</span> <span class="c-arg">proj123</span> | jq -r .id)
+
+<span class="c-comment"># Move it to the "In Progress" column</span>
+COL_ID=$(<span class="c-cmd">dida365</span> project columns <span class="c-arg">proj123</span> | jq -r <span class="c-str">'map(select(.name=="In Progress"))[0].id'</span>)
+<span class="c-cmd">dida365</span> task move <span class="c-arg">$TASK_ID</span> <span class="c-flag">--project-id</span> <span class="c-arg">proj123</span> <span class="c-flag">--column-id</span> <span class="c-arg">$COL_ID</span></pre>
+    </div>
+
+  </div>
+
+  <!-- Exit codes -->
+  <h2 class="section-title">Exit Codes</h2>
+  <table>
+    <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>Success</td></tr>
+      <tr><td>1</td><td>Configuration error — missing or invalid config</td></tr>
+      <tr><td>2</td><td>Authentication error — invalid token or OAuth2 flow failed</td></tr>
+      <tr><td>3</td><td>API error — resource not found, bad request, server error</td></tr>
+      <tr><td>4</td><td>Network error — connection timeout, DNS failure</td></tr>
+      <tr><td>5</td><td>Validation error — invalid arguments or missing flags</td></tr>
+      <tr><td>6</td><td>OAuth2 server error — callback server failed to start</td></tr>
+    </tbody>
+  </table>
+
+</main>
+
+<footer>
+  <p>
+    <a href="https://github.com/bearzk/dida365-cli">dida365-cli</a> &nbsp;·&nbsp;
+    MIT License &nbsp;·&nbsp;
+    <a href="https://dida365.com">Dida365</a> &nbsp;/&nbsp; <a href="https://ticktick.com">TickTick</a>
+  </p>
+</footer>
+
+</body>
+</html>
