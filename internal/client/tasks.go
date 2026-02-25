@@ -42,8 +42,9 @@ func (c *Client) ListTasks(projectID string) ([]*models.Task, error) {
 }
 
 // UpdateTask updates an existing task
-// Note: Unlike other task operations, update only requires the taskID
-func (c *Client) UpdateTask(taskID string, updates *models.TaskUpdate) (*models.Task, error) {
+func (c *Client) UpdateTask(projectID, taskID string, updates *models.TaskUpdate) (*models.Task, error) {
+	updates.ID = taskID
+	updates.ProjectID = projectID
 	var result models.Task
 	path := fmt.Sprintf("/open/v1/task/%s", taskID)
 	if err := c.doRequest("POST", path, updates, &result); err != nil {

@@ -24,7 +24,9 @@ type TaskCreate struct {
 
 // TaskUpdate represents the payload for updating a task
 type TaskUpdate struct {
-	Title    *string `json:"title,omitempty"`
-	Content  *string `json:"content,omitempty"`
-	ColumnID *string `json:"columnId,omitempty"`
+	ID        string  `json:"id"`
+	ProjectID string  `json:"projectId"`
+	Title     *string `json:"title,omitempty"`
+	Content   *string `json:"content,omitempty"`
+	ColumnID  *string `json:"columnId,omitempty"`
 }

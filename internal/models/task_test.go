@@ -158,7 +158,7 @@ func TestTaskUpdateJSONMarshaling(t *testing.T) {
 	})
 
 	t.Run("empty update with all nil pointers", func(t *testing.T) {
-		tu := TaskUpdate{}
+		tu := TaskUpdate{ID: "task1", ProjectID: "proj1"}
 		data, err := json.Marshal(tu)
 		if err != nil {
 			t.Fatalf("failed to marshal empty update: %v", err)
@@ -169,15 +169,27 @@ func TestTaskUpdateJSONMarshaling(t *testing.T) {
 			t.Fatalf("failed to unmarshal empty: %v", err)
 		}
 
-		if len(result) != 0 {
-			t.Errorf("empty TaskUpdate should marshal to empty object, got %v", result)
+		// ID and ProjectID are always present; optional fields omitted
+		if result["id"] != "task1" {
+			t.Errorf("id: got %v, want task1", result["id"])
+		}
+		if result["projectId"] != "proj1" {
+			t.Errorf("projectId: got %v, want proj1", result["projectId"])
+		}
+		if _, ok := result["title"]; ok {
+			t.Error("title should be omitted when nil")
+		}
+		if _, ok := result["content"]; ok {
+			t.Error("content should be omitted when nil")
 		}
 	})
 
 	t.Run("set column id", func(t *testing.T) {
 		colID := "6998df0d7fff114cc5fb5afc"
 		update := TaskUpdate{
-			ColumnID: &colID,
+			ID:        "task123",
+			ProjectID: "proj456",
+			ColumnID:  &colID,
 		}
 
 		data, err := json.Marshal(update)
@@ -192,6 +204,12 @@ func TestTaskUpdateJSONMarshaling(t *testing.T) {
 
 		if got["columnId"] != colID {
 			t.Errorf("columnId: got %v, want %s", got["columnId"], colID)
+		}
+		if got["id"] != "task123" {
+			t.Errorf("id: got %v, want task123", got["id"])
+		}
+		if got["projectId"] != "proj456" {
+			t.Errorf("projectId: got %v, want proj456", got["projectId"])
 		}
 		if _, ok := got["title"]; ok {
 			t.Error("title should be omitted when nil")

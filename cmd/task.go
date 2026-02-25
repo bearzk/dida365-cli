@@ -91,7 +91,9 @@ func init() {
 
 	// Flags for move command
 	taskMoveCmd.Flags().StringVar(&taskColumnID, "column-id", "", "Target column ID (required)")
+	taskMoveCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
 	taskMoveCmd.MarkFlagRequired("column-id")
+	taskMoveCmd.MarkFlagRequired("project-id")
 
 	// Flags for create command
 	taskCreateCmd.Flags().StringVar(&taskTitle, "title", "", "Task title (required)")
@@ -189,7 +191,7 @@ func runTaskUpdate(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	task, err := c.UpdateTask(taskID, updates)
+	task, err := c.UpdateTask(taskProjectID, taskID, updates)
 	if err != nil {
 		outputError(err, "API_ERROR", 3)
 		return nil
@@ -241,7 +243,7 @@ func runTaskMove(cmd *cobra.Command, args []string) error {
 		ColumnID: &taskColumnID,
 	}
 
-	task, err := c.UpdateTask(taskID, updates)
+	task, err := c.UpdateTask(taskProjectID, taskID, updates)
 	if err != nil {
 		outputError(err, "API_ERROR", 3)
 		return nil

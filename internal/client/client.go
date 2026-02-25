@@ -77,8 +77,8 @@ func (c *Client) doRequest(method, path string, body, result interface{}) error 
 		return c.handleHTTPError(resp.StatusCode, respBody)
 	}
 
-	// Unmarshal response if result is provided
-	if result != nil {
+	// Unmarshal response if result is provided (skip if body is empty)
+	if result != nil && len(respBody) > 0 {
 		if err := json.Unmarshal(respBody, result); err != nil {
 			return fmt.Errorf("failed to unmarshal response: %w", err)
 		}

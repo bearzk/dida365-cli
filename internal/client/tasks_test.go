@@ -181,6 +181,12 @@ func TestUpdateTask(t *testing.T) {
 			t.Fatalf("failed to decode request: %v", err)
 		}
 
+		if req.ID != "task456" {
+			t.Errorf("ID: got %s, want task456", req.ID)
+		}
+		if req.ProjectID != "proj123" {
+			t.Errorf("ProjectID: got %s, want proj123", req.ProjectID)
+		}
 		if req.Title == nil || *req.Title != "Updated Title" {
 			t.Error("title not updated correctly")
 		}
@@ -212,7 +218,7 @@ func TestUpdateTask(t *testing.T) {
 		Content: &newContent,
 	}
 
-	result, err := client.UpdateTask("task456", updates)
+	result, err := client.UpdateTask("proj123", "task456", updates)
 	if err != nil {
 		t.Fatalf("UpdateTask failed: %v", err)
 	}
