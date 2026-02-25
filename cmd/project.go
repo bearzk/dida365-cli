@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/bearzk/dida365-cli/internal/client"
@@ -80,22 +78,13 @@ func runProjectData(cmd *cobra.Command, args []string) error {
 	projectID := args[0]
 	c := loadClient()
 
-	raw, err := c.GetProjectData(projectID)
+	data, err := c.GetProjectData(projectID)
 	if err != nil {
 		outputError(err, "API_ERROR", 3)
 		return nil
 	}
 
-	var buf bytes.Buffer
-	if err := json.Indent(&buf, raw, "", "  "); err != nil {
-		outputJSON(map[string]interface{}{
-			"error": "API returned malformed JSON",
-			"raw":   string(raw),
-		})
-		return nil
-	}
-
-	fmt.Println(buf.String())
+	outputJSON(data)
 	return nil
 }
 

@@ -87,35 +87,6 @@ func (c *Client) doRequest(method, path string, body, result interface{}) error 
 	return nil
 }
 
-// doRawRequest performs an HTTP GET and returns the raw response body without
-// JSON decoding. Use this when you need the full response for API discovery.
-func (c *Client) doRawRequest(path string) ([]byte, error) {
-	url := c.baseURL + path
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+c.config.AccessToken)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.handleHTTPError(resp.StatusCode, body)
-	}
-
-	return body, nil
-}
-
 // handleHTTPError converts HTTP error responses to Go errors
 func (c *Client) handleHTTPError(statusCode int, body []byte) error {
 	switch statusCode {

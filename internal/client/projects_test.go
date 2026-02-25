@@ -195,8 +195,18 @@ func TestGetProject(t *testing.T) {
 }
 
 func TestGetProjectData(t *testing.T) {
-	t.Run("returns raw json bytes", func(t *testing.T) {
-		rawResponse := `{"tasks":[{"id":"t1","title":"Test"}],"columns":[{"id":"c1","name":"To Do"}]}`
+	t.Run("returns typed project data", func(t *testing.T) {
+		projectData := map[string]interface{}{
+			"project": map[string]interface{}{
+				"id": "proj123", "name": "Test", "sortOrder": 0, "closed": false, "kind": "TASK",
+			},
+			"tasks": []map[string]interface{}{
+				{"id": "t1", "projectId": "proj123", "title": "A task", "status": 0, "sortOrder": 0, "columnId": "col1"},
+			},
+			"columns": []map[string]interface{}{
+				{"id": "col1", "projectId": "proj123", "name": "Backlog", "sortOrder": -100},
+			},
+		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "GET" {
@@ -209,15 +219,12 @@ func TestGetProjectData(t *testing.T) {
 				t.Errorf("Authorization: got %q, want %q", got, "Bearer test")
 			}
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, rawResponse)
+			json.NewEncoder(w).Encode(projectData)
 		}))
 		defer server.Close()
 
 		cfg := &config.Config{
-			ClientID:     "test",
-			ClientSecret: "test",
-			AccessToken:  "test",
-			BaseURL:      server.URL,
+			ClientID: "test", ClientSecret: "test", AccessToken: "test", BaseURL: server.URL,
 		}
 
 		c := NewClient(cfg)
@@ -226,8 +233,20 @@ func TestGetProjectData(t *testing.T) {
 			t.Fatalf("GetProjectData failed: %v", err)
 		}
 
-		if string(result) != rawResponse {
-			t.Errorf("raw bytes: got %s, want %s", string(result), rawResponse)
+		if result.Project.ID != "proj123" {
+			t.Errorf("Project.ID: got %s, want proj123", result.Project.ID)
+		}
+		if len(result.Tasks) != 1 {
+			t.Fatalf("Tasks: got %d, want 1", len(result.Tasks))
+		}
+		if result.Tasks[0].ColumnID != "col1" {
+			t.Errorf("Tasks[0].ColumnID: got %s, want col1", result.Tasks[0].ColumnID)
+		}
+		if len(result.Columns) != 1 {
+			t.Fatalf("Columns: got %d, want 1", len(result.Columns))
+		}
+		if result.Columns[0].Name != "Backlog" {
+			t.Errorf("Columns[0].Name: got %s, want Backlog", result.Columns[0].Name)
 		}
 	})
 
@@ -239,10 +258,7 @@ func TestGetProjectData(t *testing.T) {
 		defer server.Close()
 
 		cfg := &config.Config{
-			ClientID:     "test",
-			ClientSecret: "test",
-			AccessToken:  "test",
-			BaseURL:      server.URL,
+			ClientID: "test", ClientSecret: "test", AccessToken: "test", BaseURL: server.URL,
 		}
 
 		c := NewClient(cfg)
