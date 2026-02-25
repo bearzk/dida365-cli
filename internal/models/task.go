@@ -12,6 +12,7 @@ type Task struct {
 	Priority      int        `json:"priority,omitempty"` // 0=none, 1=low, 3=med, 5=high
 	CompletedTime *time.Time `json:"completedTime,omitempty"`
 	SortOrder     int        `json:"sortOrder"`
+	ColumnID      string     `json:"columnId,omitempty"`
 }
 
 // TaskCreate represents the payload for creating a new task
@@ -23,6 +24,7 @@ type TaskCreate struct {
 
 // TaskUpdate represents the payload for updating a task
 type TaskUpdate struct {
-	Title   *string `json:"title,omitempty"`
-	Content *string `json:"content,omitempty"`
+	Title    *string `json:"title,omitempty"`
+	Content  *string `json:"content,omitempty"`
+	ColumnID *string `json:"columnId,omitempty"`
 }

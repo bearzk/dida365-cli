@@ -174,6 +174,30 @@ func TestTaskUpdateJSONMarshaling(t *testing.T) {
 		}
 	})
 
+	t.Run("set column id", func(t *testing.T) {
+		colID := "6998df0d7fff114cc5fb5afc"
+		update := TaskUpdate{
+			ColumnID: &colID,
+		}
+
+		data, err := json.Marshal(update)
+		if err != nil {
+			t.Fatalf("marshal failed: %v", err)
+		}
+
+		var got map[string]interface{}
+		if err := json.Unmarshal(data, &got); err != nil {
+			t.Fatalf("unmarshal failed: %v", err)
+		}
+
+		if got["columnId"] != colID {
+			t.Errorf("columnId: got %v, want %s", got["columnId"], colID)
+		}
+		if _, ok := got["title"]; ok {
+			t.Error("title should be omitted when nil")
+		}
+	})
+
 	t.Run("set title to empty string", func(t *testing.T) {
 		emptyStr := ""
 		tu := TaskUpdate{
