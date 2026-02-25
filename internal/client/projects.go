@@ -24,3 +24,14 @@ func (c *Client) GetProject(projectID string) (*models.Project, error) {
 	}
 	return &project, nil
 }
+
+// GetProjectData returns the raw JSON response from the project data endpoint.
+// Use this to discover the full response shape including columns, tags, etc.
+func (c *Client) GetProjectData(projectID string) ([]byte, error) {
+	path := fmt.Sprintf("/open/v1/project/%s/data", projectID)
+	data, err := c.doRawRequest(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project data: %w", err)
+	}
+	return data, nil
+}

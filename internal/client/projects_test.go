@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -188,6 +189,62 @@ func TestGetProject(t *testing.T) {
 
 		if !contains(err.Error(), "not found") {
 			t.Errorf("error should mention not found, got: %s", err.Error())
+		}
+	})
+}
+
+func TestGetProjectData(t *testing.T) {
+	t.Run("returns raw json bytes", func(t *testing.T) {
+		rawResponse := `{"tasks":[{"id":"t1","title":"Test"}],"columns":[{"id":"c1","name":"To Do"}]}`
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "GET" {
+				t.Errorf("method: got %s, want GET", r.Method)
+			}
+			if r.URL.Path != "/open/v1/project/proj123/data" {
+				t.Errorf("path: got %s, want /open/v1/project/proj123/data", r.URL.Path)
+			}
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, rawResponse)
+		}))
+		defer server.Close()
+
+		cfg := &config.Config{
+			ClientID:     "test",
+			ClientSecret: "test",
+			AccessToken:  "test",
+			BaseURL:      server.URL,
+		}
+
+		c := NewClient(cfg)
+		result, err := c.GetProjectData("proj123")
+		if err != nil {
+			t.Fatalf("GetProjectData failed: %v", err)
+		}
+
+		if string(result) != rawResponse {
+			t.Errorf("raw bytes: got %s, want %s", string(result), rawResponse)
+		}
+	})
+
+	t.Run("returns error on api failure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, `{"error":"not found"}`)
+		}))
+		defer server.Close()
+
+		cfg := &config.Config{
+			ClientID:     "test",
+			ClientSecret: "test",
+			AccessToken:  "test",
+			BaseURL:      server.URL,
+		}
+
+		c := NewClient(cfg)
+		_, err := c.GetProjectData("missing")
+		if err == nil {
+			t.Fatal("expected error, got nil")
 		}
 	})
 }
