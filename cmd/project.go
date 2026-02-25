@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"github.com/bearzk/dida365-cli/internal/client"
@@ -29,6 +31,14 @@ var projectGetCmd = &cobra.Command{
 	RunE:  runProjectGet,
 }
 
+var projectDataCmd = &cobra.Command{
+	Use:   "data <project-id>",
+	Short: "Print raw project data response",
+	Long:  `Print the raw JSON response from GET /open/v1/project/{id}/data. Use this to inspect the full response shape including columns and other fields.`,
+	Args:  cobra.ExactArgs(1),
+	RunE:  runProjectData,
+}
+
 func init() {
 	// Add project command to root
 	rootCmd.AddCommand(projectCmd)
@@ -36,6 +46,7 @@ func init() {
 	// Add subcommands to project
 	projectCmd.AddCommand(projectListCmd)
 	projectCmd.AddCommand(projectGetCmd)
+	projectCmd.AddCommand(projectDataCmd)
 }
 
 func runProjectList(cmd *cobra.Command, args []string) error {
@@ -62,6 +73,27 @@ func runProjectGet(cmd *cobra.Command, args []string) error {
 	}
 
 	outputJSON(project)
+	return nil
+}
+
+func runProjectData(cmd *cobra.Command, args []string) error {
+	projectID := args[0]
+	c := loadClient()
+
+	raw, err := c.GetProjectData(projectID)
+	if err != nil {
+		outputError(err, "API_ERROR", 3)
+		return nil
+	}
+
+	var buf bytes.Buffer
+	if err := json.Indent(&buf, raw, "", "  "); err != nil {
+		// Malformed JSON — print raw anyway
+		fmt.Println(string(raw))
+		return nil
+	}
+
+	fmt.Println(buf.String())
 	return nil
 }
 
