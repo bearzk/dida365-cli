@@ -37,6 +37,14 @@ var projectDataCmd = &cobra.Command{
 	RunE:  runProjectData,
 }
 
+var projectColumnsCmd = &cobra.Command{
+	Use:   "columns <project-id>",
+	Short: "List columns in a project",
+	Long:  `List all Kanban columns for a project. Shows column IDs needed for 'task move'.`,
+	Args:  cobra.ExactArgs(1),
+	RunE:  runProjectColumns,
+}
+
 func init() {
 	// Add project command to root
 	rootCmd.AddCommand(projectCmd)
@@ -45,6 +53,7 @@ func init() {
 	projectCmd.AddCommand(projectListCmd)
 	projectCmd.AddCommand(projectGetCmd)
 	projectCmd.AddCommand(projectDataCmd)
+	projectCmd.AddCommand(projectColumnsCmd)
 }
 
 func runProjectList(cmd *cobra.Command, args []string) error {
@@ -85,6 +94,20 @@ func runProjectData(cmd *cobra.Command, args []string) error {
 	}
 
 	outputJSON(data)
+	return nil
+}
+
+func runProjectColumns(cmd *cobra.Command, args []string) error {
+	projectID := args[0]
+	c := loadClient()
+
+	data, err := c.GetProjectData(projectID)
+	if err != nil {
+		outputError(err, "API_ERROR", 3)
+		return nil
+	}
+
+	outputJSON(data.Columns)
 	return nil
 }
 
