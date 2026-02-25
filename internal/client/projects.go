@@ -26,7 +26,8 @@ func (c *Client) GetProject(projectID string) (*models.Project, error) {
 }
 
 // GetProjectData returns the raw JSON response from the project data endpoint.
-// Use this to discover the full response shape including columns, tags, etc.
+// Use this to discover the full response shape including columns, tags, and any
+// undocumented fields. For normal task listing use ListTasks instead.
 func (c *Client) GetProjectData(projectID string) ([]byte, error) {
 	path := fmt.Sprintf("/open/v1/project/%s/data", projectID)
 	data, err := c.doRawRequest(path)

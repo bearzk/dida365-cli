@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -204,6 +205,9 @@ func TestGetProjectData(t *testing.T) {
 			if r.URL.Path != "/open/v1/project/proj123/data" {
 				t.Errorf("path: got %s, want /open/v1/project/proj123/data", r.URL.Path)
 			}
+			if got := r.Header.Get("Authorization"); got != "Bearer test" {
+				t.Errorf("Authorization: got %q, want %q", got, "Bearer test")
+			}
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, rawResponse)
 		}))
@@ -243,8 +247,8 @@ func TestGetProjectData(t *testing.T) {
 
 		c := NewClient(cfg)
 		_, err := c.GetProjectData("missing")
-		if err == nil {
-			t.Fatal("expected error, got nil")
+		if !errors.Is(err, ErrNotFound) {
+			t.Errorf("expected ErrNotFound, got: %v", err)
 		}
 	})
 }
