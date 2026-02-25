@@ -185,7 +185,7 @@ func runTaskUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if !hasChanges {
-		outputError(fmt.Errorf("no fields to update"), "VALIDATION_ERROR", 1)
+		outputError(fmt.Errorf("no fields to update"), "VALIDATION_ERROR", 5)
 		return nil
 	}
 
