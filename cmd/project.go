@@ -88,8 +88,10 @@ func runProjectData(cmd *cobra.Command, args []string) error {
 
 	var buf bytes.Buffer
 	if err := json.Indent(&buf, raw, "", "  "); err != nil {
-		// Malformed JSON — print raw anyway
-		fmt.Println(string(raw))
+		outputJSON(map[string]interface{}{
+			"error": "API returned malformed JSON",
+			"raw":   string(raw),
+		})
 		return nil
 	}
 
