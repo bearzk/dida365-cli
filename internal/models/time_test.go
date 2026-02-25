@@ -77,3 +77,30 @@ func TestFlexTimeUnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestTaskUnmarshalCompletedTime(t *testing.T) {
+	// This is the exact payload the Dida365 API returns for a completed task
+	input := `{
+		"id": "abc123",
+		"projectId": "proj456",
+		"title": "Done task",
+		"status": 2,
+		"sortOrder": 0,
+		"completedTime": "2026-02-25T20:28:56.267+0000"
+	}`
+
+	var task Task
+	if err := json.Unmarshal([]byte(input), &task); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if task.CompletedTime == nil {
+		t.Fatal("expected completedTime to be set, got nil")
+	}
+
+	want := "2026-02-25T20:28:56.267Z"
+	got := task.CompletedTime.UTC().Format(time.RFC3339Nano)
+	if got != want {
+		t.Errorf("completedTime: got %s, want %s", got, want)
+	}
+}

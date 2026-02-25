@@ -1,16 +1,14 @@
 package models
 
-import "time"
-
 // Task represents a Dida365 task
 type Task struct {
 	ID            string     `json:"id"`
 	ProjectID     string     `json:"projectId"`
 	Title         string     `json:"title"`
 	Content       string     `json:"content,omitempty"`
-	Status        int        `json:"status"`           // 0=normal, 2=completed
+	Status        int        `json:"status"`             // 0=normal, 2=completed
 	Priority      int        `json:"priority,omitempty"` // 0=none, 1=low, 3=med, 5=high
-	CompletedTime *time.Time `json:"completedTime,omitempty"`
+	CompletedTime *FlexTime  `json:"completedTime,omitempty"`
 	SortOrder     int        `json:"sortOrder"`
 	ColumnID      string     `json:"columnId,omitempty"`
 }

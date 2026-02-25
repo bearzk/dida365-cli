@@ -7,7 +7,7 @@ import (
 )
 
 func TestTaskJSONMarshaling(t *testing.T) {
-	now := time.Now().UTC()
+	nowFlex := FlexTime{Time: time.Now().UTC()}
 
 	tests := []struct {
 		name string
@@ -23,7 +23,7 @@ func TestTaskJSONMarshaling(t *testing.T) {
 				Content:       "Milk, eggs, bread",
 				Status:        0,
 				Priority:      3,
-				CompletedTime: &now,
+				CompletedTime: &nowFlex,
 				SortOrder:     1,
 			},
 			checkFields: map[string]interface{}{
@@ -60,7 +60,7 @@ func TestTaskJSONMarshaling(t *testing.T) {
 				ProjectID:     "proj111",
 				Title:         "Done task",
 				Status:        2,
-				CompletedTime: &now,
+				CompletedTime: &nowFlex,
 				SortOrder:     5,
 			},
 			checkFields: map[string]interface{}{
