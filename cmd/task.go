@@ -12,6 +12,7 @@ var (
 	taskTitle     string
 	taskProjectID string
 	taskContent   string
+	taskColumnID  string
 )
 
 var taskCmd = &cobra.Command{
@@ -67,6 +68,14 @@ var taskDeleteCmd = &cobra.Command{
 	RunE:  runTaskDelete,
 }
 
+var taskMoveCmd = &cobra.Command{
+	Use:   "move <task-id>",
+	Short: "Move a task to a different column",
+	Long:  `Move a task to a different Kanban column. Use 'project columns <project-id>' to find column IDs.`,
+	Args:  cobra.ExactArgs(1),
+	RunE:  runTaskMove,
+}
+
 func init() {
 	// Add task command to root
 	rootCmd.AddCommand(taskCmd)
@@ -78,6 +87,11 @@ func init() {
 	taskCmd.AddCommand(taskUpdateCmd)
 	taskCmd.AddCommand(taskCompleteCmd)
 	taskCmd.AddCommand(taskDeleteCmd)
+	taskCmd.AddCommand(taskMoveCmd)
+
+	// Flags for move command
+	taskMoveCmd.Flags().StringVar(&taskColumnID, "column-id", "", "Target column ID (required)")
+	taskMoveCmd.MarkFlagRequired("column-id")
 
 	// Flags for create command
 	taskCreateCmd.Flags().StringVar(&taskTitle, "title", "", "Task title (required)")
@@ -216,5 +230,23 @@ func runTaskDelete(cmd *cobra.Command, args []string) error {
 		"status":  "deleted",
 		"task_id": taskID,
 	})
+	return nil
+}
+
+func runTaskMove(cmd *cobra.Command, args []string) error {
+	taskID := args[0]
+	c := loadClient()
+
+	updates := &models.TaskUpdate{
+		ColumnID: &taskColumnID,
+	}
+
+	task, err := c.UpdateTask(taskID, updates)
+	if err != nil {
+		outputError(err, "API_ERROR", 3)
+		return nil
+	}
+
+	outputJSON(task)
 	return nil
 }
