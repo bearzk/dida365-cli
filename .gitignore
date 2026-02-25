@@ -26,3 +26,9 @@ vendor/
 # Test coverage
 coverage.txt
 coverage.html
+
+# Local config / secrets
+.env
+*.env
+config.json
+.dida365/

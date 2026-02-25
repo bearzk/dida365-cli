@@ -5,6 +5,7 @@ A command-line interface for [Dida365](https://dida365.com) (滴答清单 / Tick
 ## Features
 
 - **Task Management**: Full CRUD operations for tasks (create, read, update, delete, complete)
+- **Kanban Support**: List columns per project and move tasks between columns
 - **Project Access**: List and view projects
 - **JSON Output**: All commands output JSON for easy parsing with `jq` or other tools
 - **Scripting-Friendly**: Clear exit codes and structured error messages
@@ -96,6 +97,16 @@ dida365 project list
 dida365 project get <project-id>
 ```
 
+**List Kanban columns in a project:**
+```bash
+dida365 project columns <project-id>
+```
+
+**Get full project data (tasks, columns):**
+```bash
+dida365 project data <project-id>
+```
+
 ### Tasks
 
 **Create a task:**
@@ -134,6 +145,15 @@ dida365 task complete task456 --project-id proj123
 dida365 task delete task456 --project-id proj123
 ```
 
+**Move a task to a different Kanban column:**
+```bash
+# First, find the column IDs
+dida365 project columns <project-id>
+
+# Then move the task
+dida365 task move task456 --project-id proj123 --column-id <column-id>
+```
+
 ## Scripting Examples
 
 ### Extract specific fields with jq
@@ -157,7 +177,7 @@ set -e
 
 # Check auth status
 if ! dida365 auth status >/dev/null 2>&1; then
-  echo "Error: Not authenticated. Run 'dida365 auth configure' first."
+  echo "Error: Not authenticated. Run 'dida365 auth login' first."
   exit 1
 fi
 
