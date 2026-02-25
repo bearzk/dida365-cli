@@ -5,7 +5,7 @@ type Project struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Color     string `json:"color,omitempty"`
-	SortOrder int    `json:"sortOrder"`
+	SortOrder int64  `json:"sortOrder"`
 	Closed    bool   `json:"closed"`
 	Kind      string `json:"kind"` // "TASK" or "NOTE"
 }

@@ -33,6 +33,9 @@ func TestColumnJSONMarshaling(t *testing.T) {
 		if got.SortOrder != col.SortOrder {
 			t.Errorf("SortOrder: got %d, want %d", got.SortOrder, col.SortOrder)
 		}
+		if got.ProjectID != col.ProjectID {
+			t.Errorf("ProjectID: got %s, want %s", got.ProjectID, col.ProjectID)
+		}
 	})
 
 	t.Run("unmarshal from api response", func(t *testing.T) {
@@ -53,6 +56,9 @@ func TestColumnJSONMarshaling(t *testing.T) {
 		}
 		if col.SortOrder != -4611686018426863616 {
 			t.Errorf("SortOrder: got %d, want -4611686018426863616", col.SortOrder)
+		}
+		if col.ProjectID != "6998dee97fe9514cc5fb5afa" {
+			t.Errorf("ProjectID: got %s", col.ProjectID)
 		}
 	})
 }
