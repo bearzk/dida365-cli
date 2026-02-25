@@ -261,13 +261,12 @@ func TestDefaultConfigPath(t *testing.T) {
 }
 
 func TestConfigWithTokenFields(t *testing.T) {
-	t.Run("marshal config with refresh token and expiry", func(t *testing.T) {
+	t.Run("marshal config with expiry", func(t *testing.T) {
 		expiry := time.Now().Add(1 * time.Hour)
 		config := Config{
 			ClientID:     "test-client-id",
 			ClientSecret: "test-client-secret",
 			AccessToken:  "test-access-token",
-			RefreshToken: "test-refresh-token",
 			TokenExpiry:  expiry,
 			BaseURL:      "https://api.dida365.com",
 		}
@@ -282,22 +281,20 @@ func TestConfigWithTokenFields(t *testing.T) {
 			t.Fatalf("Unmarshal() error = %v, want nil", err)
 		}
 
-		if unmarshaled["refresh_token"] != "test-refresh-token" {
-			t.Errorf("refresh_token = %v, want %v", unmarshaled["refresh_token"], "test-refresh-token")
-		}
-
 		if _, ok := unmarshaled["token_expiry"]; !ok {
 			t.Error("token_expiry field missing in JSON")
 		}
+		if _, ok := unmarshaled["refresh_token"]; ok {
+			t.Error("refresh_token should not be present in JSON")
+		}
 	})
 
-	t.Run("unmarshal config with refresh token and expiry", func(t *testing.T) {
+	t.Run("unmarshal config with expiry", func(t *testing.T) {
 		expiry := time.Now().Add(1 * time.Hour).UTC()
 		jsonData := `{
 			"client_id": "test-client-id",
 			"client_secret": "test-client-secret",
 			"access_token": "test-access-token",
-			"refresh_token": "test-refresh-token",
 			"token_expiry": "` + expiry.Format(time.RFC3339) + `",
 			"base_url": "https://api.dida365.com"
 		}`
@@ -305,10 +302,6 @@ func TestConfigWithTokenFields(t *testing.T) {
 		var config Config
 		if err := json.Unmarshal([]byte(jsonData), &config); err != nil {
 			t.Fatalf("Unmarshal() error = %v, want nil", err)
-		}
-
-		if config.RefreshToken != "test-refresh-token" {
-			t.Errorf("RefreshToken = %v, want %v", config.RefreshToken, "test-refresh-token")
 		}
 
 		if config.TokenExpiry.IsZero() {
@@ -321,7 +314,7 @@ func TestConfigWithTokenFields(t *testing.T) {
 		}
 	})
 
-	t.Run("backward compatibility - old config without new fields", func(t *testing.T) {
+	t.Run("backward compatibility - config without expiry", func(t *testing.T) {
 		jsonData := `{
 			"client_id": "test-client-id",
 			"client_secret": "test-client-secret",
@@ -332,10 +325,6 @@ func TestConfigWithTokenFields(t *testing.T) {
 		var config Config
 		if err := json.Unmarshal([]byte(jsonData), &config); err != nil {
 			t.Fatalf("Unmarshal() error = %v, want nil", err)
-		}
-
-		if config.RefreshToken != "" {
-			t.Errorf("RefreshToken = %v, want empty string", config.RefreshToken)
 		}
 
 		if !config.TokenExpiry.IsZero() {
@@ -405,34 +394,6 @@ func TestConfigIsExpired(t *testing.T) {
 	})
 }
 
-func TestConfigCanRefresh(t *testing.T) {
-	t.Run("has refresh token returns true", func(t *testing.T) {
-		config := Config{
-			ClientID:     "test-client-id",
-			ClientSecret: "test-client-secret",
-			AccessToken:  "test-access-token",
-			RefreshToken: "test-refresh-token",
-			BaseURL:      "https://api.dida365.com",
-		}
-
-		if !config.CanRefresh() {
-			t.Error("CanRefresh() = false, want true when refresh token is set")
-		}
-	})
-
-	t.Run("no refresh token returns false", func(t *testing.T) {
-		config := Config{
-			ClientID:     "test-client-id",
-			ClientSecret: "test-client-secret",
-			AccessToken:  "test-access-token",
-			BaseURL:      "https://api.dida365.com",
-		}
-
-		if config.CanRefresh() {
-			t.Error("CanRefresh() = true, want false when refresh token is not set")
-		}
-	})
-}
 
 // Helper function to check if a string contains a substring
 func contains(s, substr string) bool {

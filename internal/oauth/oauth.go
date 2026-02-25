@@ -11,11 +11,11 @@ import (
 )
 
 // TokenResponse represents the OAuth token response from the authorization server.
+// The Dida365 API does not issue refresh tokens; access tokens are long-lived (~6 months).
 type TokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	TokenType    string `json:"token_type"`
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"`
+	TokenType   string `json:"token_type"`
 }
 
 // errorResponse represents an OAuth error response.
@@ -83,24 +83,6 @@ func StartFlow(clientID, clientSecret string, port int, service string) (*TokenR
 	return tokenResp, nil
 }
 
-// RefreshToken refreshes an access token using a refresh token.
-//
-// Parameters:
-//   - clientID: OAuth client identifier
-//   - clientSecret: OAuth client secret
-//   - refreshToken: The refresh token obtained from a previous authorization
-//   - service: Service name ("dida365" or "ticktick")
-//
-// Returns a new token response or an error if the refresh fails.
-func RefreshToken(clientID, clientSecret, refreshToken, service string) (*TokenResponse, error) {
-	tokenURL := getServiceTokenURL(service)
-	tokenResp, err := refreshAccessToken(tokenURL, refreshToken, clientID, clientSecret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to refresh token: %w", err)
-	}
-	return tokenResp, nil
-}
-
 // exchangeCodeForToken exchanges an authorization code for an access token.
 //
 // Parameters:
@@ -118,25 +100,6 @@ func exchangeCodeForToken(tokenURL, code, clientID, clientSecret, redirectURI st
 	data.Set("client_id", clientID)
 	data.Set("client_secret", clientSecret)
 	data.Set("redirect_uri", redirectURI)
-
-	return requestToken(tokenURL, data)
-}
-
-// refreshAccessToken refreshes an access token using a refresh token.
-//
-// Parameters:
-//   - tokenURL: The token endpoint URL
-//   - refreshToken: The refresh token
-//   - clientID: OAuth client identifier
-//   - clientSecret: OAuth client secret
-//
-// Returns the token response or an error if the refresh fails.
-func refreshAccessToken(tokenURL, refreshToken, clientID, clientSecret string) (*TokenResponse, error) {
-	data := url.Values{}
-	data.Set("grant_type", "refresh_token")
-	data.Set("refresh_token", refreshToken)
-	data.Set("client_id", clientID)
-	data.Set("client_secret", clientSecret)
 
 	return requestToken(tokenURL, data)
 }

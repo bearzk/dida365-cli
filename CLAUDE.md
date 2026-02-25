@@ -25,20 +25,19 @@
 
 **Commands:**
 - `auth login` - Complete OAuth2 flow (login + token exchange)
-- `auth refresh` - Refresh expired access token
 - `auth status` - Check authentication status
 
 **Flow:**
 1. Local callback server starts on configurable port (default: 8080)
 2. Browser opens to authorization URL (dida365.com or ticktick.com)
 3. User authorizes, redirected to `http://localhost:PORT/callback`
-4. CLI exchanges auth code for access_token + refresh_token
-5. Tokens saved to `~/.dida365/config.json` with expiry time
+4. CLI exchanges auth code for access_token
+5. Token saved to `~/.dida365/config.json` with expiry time
 
 **Token Management:**
-- Access tokens expire after 2 hours
-- Refresh tokens are long-lived
-- Automatic token refresh via `auth refresh` command
+- Access tokens are long-lived (~6 months)
+- The Dida365 API does NOT issue refresh tokens
+- Re-authenticate with `auth login` when token expires
 
 **Services Supported:**
 - `dida365` - China service (dida365.com)

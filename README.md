@@ -73,16 +73,6 @@ The CLI will:
 dida365 auth status
 ```
 
-### 4. Refresh Token When Expired
-
-Access tokens expire after 2 hours. Refresh them using:
-
-```bash
-dida365 auth refresh
-```
-
-The CLI will use your stored refresh token to obtain a new access token automatically.
-
 ## Usage
 
 ### Projects
@@ -177,7 +167,7 @@ set -e
 
 # Check auth status
 if ! dida365 auth status >/dev/null 2>&1; then
-  echo "Error: Not authenticated. Run 'dida365 auth login' first."
+  echo "Error: Not authenticated. Run 'dida365 auth login' to authenticate."
   exit 1
 fi
 
@@ -252,16 +242,14 @@ Location: `~/.dida365/config.json`
   "client_id": "your_client_id",
   "client_secret": "your_client_secret",
   "access_token": "your_access_token",
-  "refresh_token": "your_refresh_token",
-  "token_expiry": "2026-02-21T14:30:00Z",
+  "token_expiry": "2026-08-21T14:30:00Z",
   "base_url": "https://dida365.com"
 }
 ```
 
 **Token Management:**
-- Access tokens expire after 2 hours
-- Use `dida365 auth refresh` to get a new access token
-- Refresh tokens are long-lived and automatically saved during login
+- Access tokens are long-lived (~6 months)
+- Re-authenticate with `dida365 auth login` when your token expires
 
 **Security:** The config file is created with `0600` permissions (user read/write only).
 

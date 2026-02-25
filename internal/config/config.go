@@ -13,7 +13,6 @@ type Config struct {
 	ClientID     string    `json:"client_id"`
 	ClientSecret string    `json:"client_secret"`
 	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token,omitempty"`
 	TokenExpiry  time.Time `json:"token_expiry,omitempty"`
 	BaseURL      string    `json:"base_url"`
 }
@@ -84,16 +83,11 @@ func DefaultConfigPath() string {
 	return filepath.Join(home, ".dida365", "config.json")
 }
 
-// IsExpired returns true if the access token has expired
-// Returns false if no expiry time is set (for backward compatibility)
+// IsExpired returns true if the access token has expired.
+// Returns false if no expiry time is set (for backward compatibility).
 func (c *Config) IsExpired() bool {
 	if c.TokenExpiry.IsZero() {
 		return false
 	}
 	return time.Now().After(c.TokenExpiry)
-}
-
-// CanRefresh returns true if the configuration has a refresh token
-func (c *Config) CanRefresh() bool {
-	return c.RefreshToken != ""
 }

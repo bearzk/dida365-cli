@@ -33,13 +33,6 @@ var authStatusCmd = &cobra.Command{
 	RunE:  runAuthStatus,
 }
 
-var authRefreshCmd = &cobra.Command{
-	Use:   "refresh",
-	Short: "Refresh the access token",
-	Long:  `Refresh the access token using the stored refresh token.`,
-	RunE:  runAuthRefresh,
-}
-
 var (
 	loginClientID     string
 	loginClientSecret string
@@ -54,7 +47,6 @@ func init() {
 	// Add subcommands to auth
 	authCmd.AddCommand(authLoginCmd)
 	authCmd.AddCommand(authStatusCmd)
-	authCmd.AddCommand(authRefreshCmd)
 
 	// Add flags to login command
 	authLoginCmd.Flags().StringVar(&loginClientID, "client-id", "", "OAuth client ID (required)")
@@ -103,7 +95,6 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 		ClientID:     loginClientID,
 		ClientSecret: loginClientSecret,
 		AccessToken:  tokenResp.AccessToken,
-		RefreshToken: tokenResp.RefreshToken,
 		TokenExpiry:  tokenExpiry,
 		BaseURL:      baseURL,
 	}
@@ -162,17 +153,12 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 			"client_id":   cfg.ClientID,
 			"token_valid": false,
 			"error":       fmt.Sprintf("Token validation failed: %v", err),
-			"can_refresh": cfg.CanRefresh(),
-			"is_expired":  cfg.IsExpired(),
 		}
-		// Add expiry fields if available
 		if !cfg.TokenExpiry.IsZero() {
 			result["expires_at"] = cfg.TokenExpiry.Format(time.RFC3339)
-			result["expires_in_seconds"] = int(time.Until(cfg.TokenExpiry).Seconds())
 		}
-		// Add suggestion if token is expired
 		if cfg.IsExpired() {
-			result["suggestion"] = "Token has expired. Run 'dida365 auth refresh' to renew it."
+			result["suggestion"] = "Token has expired. Run 'dida365 auth login' to re-authenticate."
 		}
 		outputJSON(result)
 		os.Exit(2)
@@ -184,81 +170,12 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 		"configured":  true,
 		"client_id":   cfg.ClientID,
 		"token_valid": true,
-		"can_refresh": cfg.CanRefresh(),
-		"is_expired":  cfg.IsExpired(),
 	}
-	// Add expiry fields if available
 	if !cfg.TokenExpiry.IsZero() {
 		result["expires_at"] = cfg.TokenExpiry.Format(time.RFC3339)
 		result["expires_in_seconds"] = int(time.Until(cfg.TokenExpiry).Seconds())
 	}
-	// Add suggestion if token is expired
-	if cfg.IsExpired() {
-		result["suggestion"] = "Token has expired. Run 'dida365 auth refresh' to renew it."
-	}
 	outputJSON(result)
-
-	return nil
-}
-
-func runAuthRefresh(cmd *cobra.Command, args []string) error {
-	// Get config path
-	configPath := config.DefaultConfigPath()
-	if configPath == "" {
-		outputError(fmt.Errorf("failed to determine home directory"), "CONFIG_ERROR", 1)
-		return nil
-	}
-
-	// Load config
-	cfg, err := config.Load(configPath)
-	if err != nil {
-		outputError(err, "CONFIG_ERROR", 1)
-		return nil
-	}
-
-	// Check if refresh token exists
-	if !cfg.CanRefresh() {
-		outputError(fmt.Errorf("no refresh token available"), "NO_REFRESH_TOKEN", 1)
-		return nil
-	}
-
-	// Determine service from BaseURL
-	var service string
-	if strings.Contains(cfg.BaseURL, "ticktick") {
-		service = "ticktick"
-	} else {
-		service = "dida365"
-	}
-
-	// Print progress message
-	fmt.Fprintf(os.Stderr, "Refreshing access token...\n")
-
-	// Call RefreshToken
-	tokenResp, err := oauth.RefreshToken(cfg.ClientID, cfg.ClientSecret, cfg.RefreshToken, service)
-	if err != nil {
-		outputError(err, "REFRESH_FAILED", 2)
-		return nil
-	}
-
-	// Calculate new expiry
-	tokenExpiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
-
-	// Update config with new tokens
-	cfg.AccessToken = tokenResp.AccessToken
-	cfg.RefreshToken = tokenResp.RefreshToken
-	cfg.TokenExpiry = tokenExpiry
-
-	// Save config
-	if err := cfg.Save(configPath); err != nil {
-		outputError(err, "CONFIG_ERROR", 1)
-		return nil
-	}
-
-	// Output success
-	outputJSON(map[string]interface{}{
-		"refreshed":  true,
-		"expires_at": tokenExpiry.Format(time.RFC3339),
-	})
 
 	return nil
 }
