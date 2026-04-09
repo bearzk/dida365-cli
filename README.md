@@ -104,7 +104,8 @@ dida365 project data <project-id>
 dida365 task create \
   --title "Deploy to production" \
   --project-id "proj123" \
-  --content "Deploy v2.0.0"
+  --content "Deploy v2.0.0" \
+  --due-date "2026-04-30"
 ```
 
 **List tasks in a project:**
@@ -122,7 +123,8 @@ dida365 task get task456 --project-id proj123
 dida365 task update task456 \
   --project-id proj123 \
   --title "New title" \
-  --content "Updated content"
+  --content "Updated content" \
+  --due-date "2026-05-01 18:30"
 ```
 
 **Complete a task:**
@@ -142,6 +144,18 @@ dida365 project columns <project-id>
 
 # Then move the task
 dida365 task move task456 --project-id proj123 --column-id <column-id>
+```
+
+**Accepted `--due-date` formats:**
+```bash
+# All-day deadline
+dida365 task create --title "Monthly summary" --project-id "proj123" --due-date "2026-04-30"
+
+# Specific local time
+dida365 task create --title "Release window" --project-id "proj123" --due-date "2026-04-30 18:30"
+
+# RFC3339
+dida365 task update task456 --project-id proj123 --due-date "2026-04-30T23:59:59+08:00"
 ```
 
 ## Scripting Examples
@@ -217,6 +231,8 @@ Commands output the resource or array directly:
   "id": "task123",
   "projectId": "proj456",
   "title": "Task title",
+  "dueDate": "2026-04-30T15:59:59Z",
+  "isAllDay": false,
   "status": 0,
   "sortOrder": 1
 }

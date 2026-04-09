@@ -8,6 +8,8 @@ import (
 
 func TestTaskJSONMarshaling(t *testing.T) {
 	nowFlex := FlexTime{Time: time.Now().UTC()}
+	dueFlex := FlexTime{Time: time.Date(2026, 4, 30, 15, 59, 59, 0, time.UTC)}
+	isAllDay := false
 
 	tests := []struct {
 		name string
@@ -21,6 +23,9 @@ func TestTaskJSONMarshaling(t *testing.T) {
 				ProjectID:     "proj456",
 				Title:         "Buy groceries",
 				Content:       "Milk, eggs, bread",
+				DueDate:       &dueFlex,
+				TimeZone:      "Asia/Shanghai",
+				IsAllDay:      &isAllDay,
 				Status:        0,
 				Priority:      3,
 				CompletedTime: &nowFlex,
@@ -31,6 +36,8 @@ func TestTaskJSONMarshaling(t *testing.T) {
 				"projectId": "proj456",
 				"title":     "Buy groceries",
 				"content":   "Milk, eggs, bread",
+				"timeZone":  "Asia/Shanghai",
+				"isAllDay":  false,
 				"status":    float64(0),
 				"priority":  float64(3),
 				"sortOrder": float64(1),
@@ -106,6 +113,8 @@ func TestTaskCreateJSONMarshaling(t *testing.T) {
 		Title:     "New task",
 		ProjectID: "proj123",
 		Content:   "Task description",
+		DueDate:   "2026-04-30T15:59:59+0000",
+		IsAllDay:  &[]bool{false}[0],
 	}
 
 	data, err := json.Marshal(tc)
@@ -127,16 +136,26 @@ func TestTaskCreateJSONMarshaling(t *testing.T) {
 	if result["content"] != "Task description" {
 		t.Errorf("content: got %v, want Task description", result["content"])
 	}
+	if result["dueDate"] != "2026-04-30T15:59:59+0000" {
+		t.Errorf("dueDate: got %v, want 2026-04-30T15:59:59+0000", result["dueDate"])
+	}
+	if result["isAllDay"] != false {
+		t.Errorf("isAllDay: got %v, want false", result["isAllDay"])
+	}
 }
 
 func TestTaskUpdateJSONMarshaling(t *testing.T) {
 	t.Run("update with non-empty values", func(t *testing.T) {
 		title := "Updated title"
 		content := "Updated content"
+		dueDate := "2026-04-30T15:59:59+0000"
+		isAllDay := false
 
 		tu := TaskUpdate{
 			Title:   &title,
 			Content: &content,
+			DueDate: &dueDate,
+			IsAllDay: &isAllDay,
 		}
 
 		data, err := json.Marshal(tu)
@@ -154,6 +173,12 @@ func TestTaskUpdateJSONMarshaling(t *testing.T) {
 		}
 		if result["content"] != "Updated content" {
 			t.Errorf("content: got %v, want Updated content", result["content"])
+		}
+		if result["dueDate"] != dueDate {
+			t.Errorf("dueDate: got %v, want %s", result["dueDate"], dueDate)
+		}
+		if result["isAllDay"] != false {
+			t.Errorf("isAllDay: got %v, want false", result["isAllDay"])
 		}
 	})
 
