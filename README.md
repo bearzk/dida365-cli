@@ -105,7 +105,8 @@ dida365 task create \
   --title "Deploy to production" \
   --project-id "proj123" \
   --content "Deploy v2.0.0" \
-  --due-date "2026-04-30"
+  --due-date "2026-04-30" \
+  --start-date "2026-05-01"
 ```
 
 **List tasks in a project:**
@@ -124,7 +125,8 @@ dida365 task update task456 \
   --project-id proj123 \
   --title "New title" \
   --content "Updated content" \
-  --due-date "2026-05-01 18:30"
+  --due-date "2026-05-01 18:30" \
+  --start-date "2026-05-01 18:30"
 ```
 
 **Complete a task:**
@@ -146,16 +148,23 @@ dida365 project columns <project-id>
 dida365 task move task456 --project-id proj123 --column-id <column-id>
 ```
 
-**Accepted `--due-date` formats:**
+**Accepted `--start-date` and `--due-date` formats:**
 ```bash
-# All-day deadline
-dida365 task create --title "Monthly summary" --project-id "proj123" --due-date "2026-04-30"
+# All-day (date only)
+dida365 task create --title "Monthly summary" --project-id "proj123" \
+  --start-date "2026-04-28" --due-date "2026-04-30"
 
-# Specific local time
-dida365 task create --title "Release window" --project-id "proj123" --due-date "2026-04-30 18:30"
+# Specific local time (space separator)
+dida365 task create --title "Release window" --project-id "proj123" \
+  --start-date "2026-04-30 10:00" --due-date "2026-04-30 18:30"
 
-# RFC3339
-dida365 task update task456 --project-id proj123 --due-date "2026-04-30T23:59:59+08:00"
+# Specific local time (T separator)
+dida365 task create --title "Release window" --project-id "proj123" \
+  --start-date "2026-04-30T10:00" --due-date "2026-04-30T18:30"
+
+# RFC3339 with timezone
+dida365 task update task456 --project-id proj123 \
+  --start-date "2026-04-30T09:00:00+08:00" --due-date "2026-04-30T23:59:59+08:00"
 ```
 
 ## Scripting Examples

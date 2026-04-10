@@ -22,6 +22,7 @@ type TaskCreate struct {
 	Title     string `json:"title"`
 	ProjectID string `json:"projectId"`
 	Content   string `json:"content,omitempty"`
+	StartDate string `json:"startDate,omitempty"`
 	DueDate   string `json:"dueDate,omitempty"`
 	IsAllDay  *bool  `json:"isAllDay,omitempty"`
 }
@@ -33,6 +34,7 @@ type TaskUpdate struct {
 	Title     *string `json:"title,omitempty"`
 	Content   *string `json:"content,omitempty"`
 	ColumnID  *string `json:"columnId,omitempty"`
+	StartDate *string `json:"startDate,omitempty"`
 	DueDate   *string `json:"dueDate,omitempty"`
 	IsAllDay  *bool   `json:"isAllDay,omitempty"`
 }

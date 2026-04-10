@@ -13,6 +13,7 @@ var (
 	taskProjectID string
 	taskContent   string
 	taskColumnID  string
+	taskStartDate string
 	taskDueDate   string
 )
 
@@ -100,6 +101,7 @@ func init() {
 	taskCreateCmd.Flags().StringVar(&taskTitle, "title", "", "Task title (required)")
 	taskCreateCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
 	taskCreateCmd.Flags().StringVar(&taskContent, "content", "", "Task content (optional)")
+	taskCreateCmd.Flags().StringVar(&taskStartDate, "start-date", "", "Task start date, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskCreateCmd.Flags().StringVar(&taskDueDate, "due-date", "", "Task deadline, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskCreateCmd.MarkFlagRequired("title")
 	taskCreateCmd.MarkFlagRequired("project-id")
@@ -111,12 +113,17 @@ func init() {
 	// Flags for update command
 	taskUpdateCmd.Flags().StringVar(&taskTitle, "title", "", "Task title (optional)")
 	taskUpdateCmd.Flags().StringVar(&taskContent, "content", "", "Task content (optional)")
+	taskUpdateCmd.Flags().StringVar(&taskStartDate, "start-date", "", "Task start date, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskUpdateCmd.Flags().StringVar(&taskDueDate, "due-date", "", "Task deadline, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskUpdateCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
 	taskUpdateCmd.MarkFlagRequired("project-id")
 
 	taskDeleteCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
 	taskDeleteCmd.MarkFlagRequired("project-id")
+
+	// Flags for complete command
+	taskCompleteCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
+	taskCompleteCmd.MarkFlagRequired("project-id")
 }
 
 func runTaskCreate(cmd *cobra.Command, args []string) error {
@@ -128,8 +135,17 @@ func runTaskCreate(cmd *cobra.Command, args []string) error {
 		Content:   taskContent,
 	}
 
+	if cmd.Flags().Changed("start-date") {
+		normalizedStartDate, _, err := normalizeDateInput(taskStartDate)
+		if err != nil {
+			outputError(err, "VALIDATION_ERROR", 5)
+			return nil
+		}
+		taskCreate.StartDate = normalizedStartDate
+	}
+
 	if cmd.Flags().Changed("due-date") {
-		normalizedDueDate, isAllDay, err := normalizeDueDateInput(taskDueDate)
+		normalizedDueDate, isAllDay, err := normalizeDateInput(taskDueDate)
 		if err != nil {
 			outputError(err, "VALIDATION_ERROR", 5)
 			return nil
@@ -194,8 +210,18 @@ func runTaskUpdate(cmd *cobra.Command, args []string) error {
 		hasChanges = true
 	}
 
+	if cmd.Flags().Changed("start-date") {
+		normalizedStartDate, _, err := normalizeDateInput(taskStartDate)
+		if err != nil {
+			outputError(err, "VALIDATION_ERROR", 5)
+			return nil
+		}
+		updates.StartDate = &normalizedStartDate
+		hasChanges = true
+	}
+
 	if cmd.Flags().Changed("due-date") {
-		normalizedDueDate, isAllDay, err := normalizeDueDateInput(taskDueDate)
+		normalizedDueDate, isAllDay, err := normalizeDateInput(taskDueDate)
 		if err != nil {
 			outputError(err, "VALIDATION_ERROR", 5)
 			return nil

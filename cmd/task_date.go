@@ -22,7 +22,7 @@ var dueDateLayoutsLocal = []string{
 	"2006-01-02T15:04:05",
 }
 
-func normalizeDueDateInput(input string) (string, bool, error) {
+func normalizeDateInput(input string) (string, bool, error) {
 	trimmed := strings.TrimSpace(input)
 	if trimmed == "" {
 		return "", false, fmt.Errorf("due date cannot be empty")

@@ -2,7 +2,7 @@ package cmd
 
 import "testing"
 
-func TestNormalizeDueDateInput(t *testing.T) {
+func TestnormalizeDateInput(t *testing.T) {
 	tests := []struct {
 		name       string
 		input      string
@@ -37,7 +37,7 @@ func TestNormalizeDueDateInput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, gotAllDay, err := normalizeDueDateInput(tt.input)
+			got, gotAllDay, err := normalizeDateInput(tt.input)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected error, got nil")
@@ -49,10 +49,10 @@ func TestNormalizeDueDateInput(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 			if got != tt.want {
-				t.Fatalf("normalizeDueDateInput() = %q, want %q", got, tt.want)
+				t.Fatalf("normalizeDateInput() = %q, want %q", got, tt.want)
 			}
 			if gotAllDay != tt.wantAllDay {
-				t.Fatalf("normalizeDueDateInput() allDay = %v, want %v", gotAllDay, tt.wantAllDay)
+				t.Fatalf("normalizeDateInput() allDay = %v, want %v", gotAllDay, tt.wantAllDay)
 			}
 		})
 	}
