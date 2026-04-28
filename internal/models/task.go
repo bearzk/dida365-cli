@@ -6,6 +6,11 @@ type Task struct {
 	ProjectID     string     `json:"projectId"`
 	Title         string     `json:"title"`
 	Content       string     `json:"content,omitempty"`
+	Desc          string     `json:"desc,omitempty"`
+	StartDate     *FlexTime  `json:"startDate,omitempty"`
+	DueDate       *FlexTime  `json:"dueDate,omitempty"`
+	TimeZone      string     `json:"timeZone,omitempty"`
+	IsAllDay      *bool      `json:"isAllDay,omitempty"`
 	Status        int        `json:"status"`             // 0=normal, 2=completed
 	Priority      int        `json:"priority,omitempty"` // 0=none, 1=low, 3=med, 5=high
 	CompletedTime *FlexTime  `json:"completedTime,omitempty"`
@@ -18,6 +23,10 @@ type TaskCreate struct {
 	Title     string `json:"title"`
 	ProjectID string `json:"projectId"`
 	Content   string `json:"content,omitempty"`
+	Desc      string `json:"desc,omitempty"`
+	StartDate string `json:"startDate,omitempty"`
+	DueDate   string `json:"dueDate,omitempty"`
+	IsAllDay  *bool  `json:"isAllDay,omitempty"`
 }
 
 // TaskUpdate represents the payload for updating a task
@@ -26,5 +35,9 @@ type TaskUpdate struct {
 	ProjectID string  `json:"projectId"`
 	Title     *string `json:"title,omitempty"`
 	Content   *string `json:"content,omitempty"`
+	Desc      *string `json:"desc,omitempty"`
 	ColumnID  *string `json:"columnId,omitempty"`
+	StartDate *string `json:"startDate,omitempty"`
+	DueDate   *string `json:"dueDate,omitempty"`
+	IsAllDay  *bool   `json:"isAllDay,omitempty"`
 }
