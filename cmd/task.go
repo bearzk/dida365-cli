@@ -12,9 +12,11 @@ var (
 	taskTitle     string
 	taskProjectID string
 	taskContent   string
+	taskDesc      string
 	taskColumnID  string
 	taskStartDate string
 	taskDueDate   string
+	taskShowDesc  bool
 )
 
 var taskCmd = &cobra.Command{
@@ -101,6 +103,7 @@ func init() {
 	taskCreateCmd.Flags().StringVar(&taskTitle, "title", "", "Task title (required)")
 	taskCreateCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
 	taskCreateCmd.Flags().StringVar(&taskContent, "content", "", "Task content (optional)")
+	taskCreateCmd.Flags().StringVar(&taskDesc, "desc", "", "Task description / checklist description (optional)")
 	taskCreateCmd.Flags().StringVar(&taskStartDate, "start-date", "", "Task start date, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskCreateCmd.Flags().StringVar(&taskDueDate, "due-date", "", "Task deadline, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskCreateCmd.MarkFlagRequired("title")
@@ -108,11 +111,13 @@ func init() {
 
 	// Flags for get command
 	taskGetCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
+	taskGetCmd.Flags().BoolVar(&taskShowDesc, "show-desc", false, "Show task description field")
 	taskGetCmd.MarkFlagRequired("project-id")
 
 	// Flags for update command
 	taskUpdateCmd.Flags().StringVar(&taskTitle, "title", "", "Task title (optional)")
 	taskUpdateCmd.Flags().StringVar(&taskContent, "content", "", "Task content (optional)")
+	taskUpdateCmd.Flags().StringVar(&taskDesc, "desc", "", "Task description / checklist description (optional)")
 	taskUpdateCmd.Flags().StringVar(&taskStartDate, "start-date", "", "Task start date, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskUpdateCmd.Flags().StringVar(&taskDueDate, "due-date", "", "Task deadline, accepts YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DDTHH:MM, or RFC3339")
 	taskUpdateCmd.Flags().StringVar(&taskProjectID, "project-id", "", "Project ID (required)")
@@ -133,6 +138,7 @@ func runTaskCreate(cmd *cobra.Command, args []string) error {
 		Title:     taskTitle,
 		ProjectID: taskProjectID,
 		Content:   taskContent,
+		Desc:      taskDesc,
 	}
 
 	if cmd.Flags().Changed("start-date") {
@@ -174,6 +180,10 @@ func runTaskGet(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	if !taskShowDesc {
+		task.Desc = ""
+	}
+
 	outputJSON(task)
 	return nil
 }
@@ -207,6 +217,11 @@ func runTaskUpdate(cmd *cobra.Command, args []string) error {
 
 	if cmd.Flags().Changed("content") {
 		updates.Content = &taskContent
+		hasChanges = true
+	}
+
+	if cmd.Flags().Changed("desc") {
+		updates.Desc = &taskDesc
 		hasChanges = true
 	}
 
