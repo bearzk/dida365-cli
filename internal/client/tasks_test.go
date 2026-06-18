@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/bearzk/dida365-cli/internal/config"
 	"github.com/bearzk/dida365-cli/internal/models"
@@ -30,12 +31,23 @@ func TestCreateTask(t *testing.T) {
 		if req.ProjectID != "proj123" {
 			t.Errorf("projectId: got %s, want proj123", req.ProjectID)
 		}
+		if req.DueDate != "2026-04-30T15:59:59+0000" {
+			t.Errorf("dueDate: got %s, want 2026-04-30T15:59:59+0000", req.DueDate)
+		}
+		if req.IsAllDay == nil || *req.IsAllDay {
+			t.Errorf("isAllDay: got %v, want false", req.IsAllDay)
+		}
+
+		dueDate := models.FlexTime{Time: time.Date(2026, 4, 30, 15, 59, 59, 0, time.UTC)}
+		isAllDay := false
 
 		task := models.Task{
 			ID:        "task456",
 			ProjectID: req.ProjectID,
 			Title:     req.Title,
 			Content:   req.Content,
+			DueDate:   &dueDate,
+			IsAllDay:  &isAllDay,
 			Status:    0,
 			SortOrder: 0,
 		}
@@ -57,6 +69,8 @@ func TestCreateTask(t *testing.T) {
 		Title:     "Test Task",
 		ProjectID: "proj123",
 		Content:   "Task description",
+		DueDate:   "2026-04-30T15:59:59+0000",
+		IsAllDay:  &[]bool{false}[0],
 	}
 
 	result, err := client.CreateTask(taskCreate)
@@ -81,10 +95,15 @@ func TestGetTask(t *testing.T) {
 			t.Errorf("path: got %s, want /open/v1/project/proj123/task/task456", r.URL.Path)
 		}
 
+		dueDate := models.FlexTime{Time: time.Date(2026, 4, 30, 15, 59, 59, 0, time.UTC)}
+		isAllDay := false
+
 		task := models.Task{
 			ID:        "task456",
 			ProjectID: "proj123",
 			Title:     "Existing Task",
+			DueDate:   &dueDate,
+			IsAllDay:  &isAllDay,
 			Status:    0,
 			SortOrder: 1,
 		}
@@ -129,7 +148,7 @@ func TestListTasks(t *testing.T) {
 			"id":   "proj123",
 			"name": "Test Project",
 			"tasks": []models.Task{
-				{ID: "task1", ProjectID: "proj123", Title: "Task 1", Status: 0, SortOrder: 1},
+				{ID: "task1", ProjectID: "proj123", Title: "Task 1", DueDate: &models.FlexTime{Time: time.Date(2026, 4, 30, 15, 59, 59, 0, time.UTC)}, Status: 0, SortOrder: 1},
 				{ID: "task2", ProjectID: "proj123", Title: "Task 2", Status: 2, SortOrder: 2},
 			},
 		}
@@ -190,12 +209,23 @@ func TestUpdateTask(t *testing.T) {
 		if req.Title == nil || *req.Title != "Updated Title" {
 			t.Error("title not updated correctly")
 		}
+		if req.DueDate == nil || *req.DueDate != "2026-05-01T00:00:00+0000" {
+			t.Errorf("dueDate: got %v, want 2026-05-01T00:00:00+0000", req.DueDate)
+		}
+		if req.IsAllDay == nil || !*req.IsAllDay {
+			t.Errorf("isAllDay: got %v, want true", req.IsAllDay)
+		}
+
+		dueDate := models.FlexTime{Time: time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)}
+		isAllDay := true
 
 		task := models.Task{
 			ID:        "task456",
 			ProjectID: "proj123",
 			Title:     newTitle,
 			Content:   newContent,
+			DueDate:   &dueDate,
+			IsAllDay:  &isAllDay,
 			Status:    0,
 			SortOrder: 1,
 		}
@@ -216,6 +246,8 @@ func TestUpdateTask(t *testing.T) {
 	updates := &models.TaskUpdate{
 		Title:   &newTitle,
 		Content: &newContent,
+		DueDate: &[]string{"2026-05-01T00:00:00+0000"}[0],
+		IsAllDay: &[]bool{true}[0],
 	}
 
 	result, err := client.UpdateTask("proj123", "task456", updates)
