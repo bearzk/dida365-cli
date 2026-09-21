@@ -1,8 +1,22 @@
 package cmd
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+)
 
-func TestnormalizeDateInput(t *testing.T) {
+func localOffset() string {
+	_, offset := time.Now().Zone()
+	h, m := offset/3600, (offset%3600)/60
+	if m < 0 {
+		m = -m
+	}
+	return fmt.Sprintf("%+03d%02d", h, m)
+}
+
+func TestNormalizeDateInput(t *testing.T) {
+	tz := localOffset()
 	tests := []struct {
 		name       string
 		input      string
@@ -13,13 +27,13 @@ func TestnormalizeDateInput(t *testing.T) {
 		{
 			name:       "date only becomes all day",
 			input:      "2026-04-30",
-			want:       "2026-04-30T00:00:00+0800",
+			want:       "2026-04-30T00:00:00" + tz,
 			wantAllDay: true,
 		},
 		{
 			name:       "local datetime with space",
 			input:      "2026-04-30 18:30",
-			want:       "2026-04-30T18:30:00+0800",
+			want:       "2026-04-30T18:30:00" + tz,
 			wantAllDay: false,
 		},
 		{
